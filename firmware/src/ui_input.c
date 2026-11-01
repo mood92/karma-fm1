@@ -784,6 +784,10 @@ static int layers_input(uint32_t note_edges, uint32_t *pressed, uint32_t home)
             used[l] = 1;                                  /* a key while held: not a tap */
         if (!d && down[l] && !used[l] && now - t0[l] < TAP_MS && !ui.menu && !ui.confirm)
             layer_tap(l);
+        if (!d && down[l] && !used[l] && l == LY_LIVE && now - t0[l] >= GLO_KEEP_MS && ly_lock == LY_PLAY && !ui.menu && !ui.confirm) {
+            ly_lock = LY_LIVE;                            /* LFO held a while, nothing touched: Live stays (one finger: no HOME) */
+            ui.force = 1;
+        }
         if (!d && down[l] && !used[l] && l == LY_MIX && now - t0[l] >= GLO_KEEP_MS && ly_lock == LY_PLAY && !ui.menu && !ui.confirm) {
             ly_lock = LY_MIX;                             /* GLO held a while, nothing touched: the mixer stays (2026-10-28,
                                                            * Ariel); any other button, or GLO again, lets it go */
@@ -854,6 +858,17 @@ static int layers_input(uint32_t note_edges, uint32_t *pressed, uint32_t home)
         if (q != thr_req)
             ui.force = 1;                                 /* (the layer's sub line says it) */
         thr_req = (uint8_t)q;
+    }
+    if (held == LY_LIVE) {                                /* LIVE + OCT+: store armed (the next slot key keeps the sound) */
+        uint32_t pb = 1u << panel.btn[B_OCTUP];
+        static uint32_t prev;
+        uint32_t b = fm1_in.buttons & pb, press = b & ~prev;
+        prev = b;
+        if (press) {
+            used[held] = 1;
+            live_store ^= 1u;
+            ui_message(live_store ? "STORE: PICK SLOT" : "STORE OFF");
+        }
     }
     if (held == LY_ERASE) {                               /* EDIT + OCT- / OCT+: undo / redo */
         uint32_t ob = 1u << panel.btn[B_OCTDN], pb = 1u << panel.btn[B_OCTUP];

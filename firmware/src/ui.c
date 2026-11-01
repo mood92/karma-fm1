@@ -591,6 +591,7 @@ static int preset_go_to(track_t *t, uint32_t n)
 static uint8_t setlist[SETLIST_N];
 static uint8_t live_slot = 0xFF;                     /* the slot last recalled (0xFF none) */
 static uint8_t setlist_ready;
+static uint8_t live_store;                           /* OCT+ tapped in LIVE: the next slot key stores */
 static void setlist_default(void)
 {
     uint32_t i;
@@ -623,7 +624,8 @@ static void live_key(uint32_t s)
         ui_message("DRUM TRACK");
         return;
     }
-    if ((fm1_in.buttons >> panel.btn[B_OCTUP]) & 1u) {
+    if (live_store || ((fm1_in.buttons >> panel.btn[B_OCTUP]) & 1u)) {
+        live_store = 0;
         setlist[s] = (uint8_t)preset_pos(&tot);
         ui_say("STORED SLOT ", b);
         return;
