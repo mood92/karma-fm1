@@ -41,8 +41,13 @@ jobs:
       - name: Package files
         run: ls -l build/*.fwsc build/*.bin
 
+      - name: Name the package
+        run: |
+          mkdir -p out
+          cp build/karma.fwsc out/MainMenu-LivePlayer.fwsc
+
       - uses: actions/upload-artifact@v4
         with:
-          name: firmware-fwsc
-          path: build/*.fwsc
+          name: MainMenu-LivePlayer
+          path: out/MainMenu-LivePlayer.fwsc
           if-no-files-found: error
