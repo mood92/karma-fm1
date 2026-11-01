@@ -627,6 +627,7 @@ static void live_key(uint32_t s)
     if (live_store || ((fm1_in.buttons >> panel.btn[B_OCTUP]) & 1u)) {
         live_store = 0;
         setlist[s] = (uint8_t)preset_pos(&tot);
+        settings_later = 1;                          /* (saved with the settings, once stopped) */
         ui_say("STORED SLOT ", b);
         return;
     }

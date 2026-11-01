@@ -917,8 +917,12 @@ static int project_used(uint32_t slot) { return proj_ok(&proj_slot[slot & 3u]); 
  * the default (nothing learned, channels 1 2 3 10, OTHER SEL, BEND 2): else the object is exactly 2.5's. 2.6 test
  * builds wrote 32 (the map) or 36 bytes (and the channels) */
 #define MIDI_PART (2u * ML_N + 8u)
-_Static_assert(sizeof(persist_t) + sizeof(dsu_bank_t) + MIDI_PART <= ST_PAYLOAD_MAX, "the settings object fits its sector");
-static uint8_t midi_saved[MIDI_PART];
+/* LIVE SETLIST: the settings object's last part, after the MIDI part: the 20 slots (ui.c setlist), one byte each, 4 spare.
+ * Written together with the MIDI part (the pair is one "third part"); an object without it reads as the default setlist */
+#define LIVE_PART 24u
+#define SET_PART (MIDI_PART + LIVE_PART)
+_Static_assert(sizeof(persist_t) + sizeof(dsu_bank_t) + SET_PART <= ST_PAYLOAD_MAX, "the settings object fits its sector");
+static uint8_t midi_saved[SET_PART];
 static uint8_t drch_seed;                           /* a settings object as 2.5 wrote it: the drum channel was the
                                                      * project's then (autosave_resume takes it from a 2.5 autosave) */               /* the part as flash has it (settings_save: written when it differs) */
 static void midi_part_fill(uint8_t *b)
@@ -930,6 +934,10 @@ static void midi_part_fill(uint8_t *b)
     b[2u * ML_N + 3u] = (uint8_t)(midi_set[3] | midi_set[4] << 7);
     b[2u * ML_N + 4u] = midi_set[5];
     b[2u * ML_N + 5u] = b[2u * ML_N + 6u] = b[2u * ML_N + 7u] = 0;
+    if (!setlist_ready)
+        setlist_default();
+    for (k = 0; k < LIVE_PART; k++)
+        b[MIDI_PART + k] = k < SETLIST_N ? setlist[k] : 0u;
 }
 static int midi_part_default(const uint8_t *b)
 {
@@ -937,6 +945,9 @@ static int midi_part_default(const uint8_t *b)
     uint32_t k;
     for (k = 0; k < 2u * ML_N; k++)
         if (b[k])
+            return 0;
+    for (k = 0; k < SETLIST_N; k++)
+        if (b[MIDI_PART + k] != k)
             return 0;
     return b[2u * ML_N] == def[0] && b[2u * ML_N + 1u] == def[1] && b[2u * ML_N + 2u] == def[2] &&
            b[2u * ML_N + 3u] == (uint8_t)(def[3] | def[4] << 7) && b[2u * ML_N + 4u] == def[5];
@@ -967,7 +978,7 @@ static void midi_part_read(const uint8_t *b, uint32_t n)
 }
 static int settings_write(const persist_t *p)
 {
-    uint8_t mp[MIDI_PART];
+    uint8_t mp[SET_PART];
     if (!dsu_valid(&dsu))
         dsu_defaults();
     midi_part_fill(mp);
@@ -984,16 +995,23 @@ static void dsu_boot(void)                          /* the SYN kits (and the MID
     st_hdr_t h;
     uint32_t len = sizeof(persist_t) + sizeof(dsu_bank_t), k;
     dsu_defaults();
+    setlist_default();
     for (k = 0; k < ML_N; k++)
         ml_tab[k] = 0;
     if (st_current(OBJ_SETTINGS, &h) >= 0 &&
-        (h.len == len || h.len == len + 2u * ML_N || h.len == len + 2u * ML_N + 4u || h.len == len + MIDI_PART) &&
+        (h.len == len || h.len == len + 2u * ML_N || h.len == len + 2u * ML_N + 4u || h.len == len + MIDI_PART ||
+         h.len == len + SET_PART) &&
         dsu_valid((const dsu_bank_t *)(st_buf + sizeof(persist_t)))) {
         memcpy(&dsu, st_buf + sizeof(persist_t), sizeof dsu);
         for (k = 0; k < DSU_N; k++)
             dsu_fix_kit(&dsu.k[k]);
         if (h.len > len)
-            midi_part_read(st_buf + len, h.len - len);
+            midi_part_read(st_buf + len, h.len - len > MIDI_PART ? MIDI_PART : h.len - len);
+        if (h.len == len + SET_PART) {
+            for (k = 0; k < SETLIST_N; k++)
+                setlist[k] = st_buf[len + MIDI_PART + k];
+            setlist_ready = 1;
+        }
         drch_seed = h.len == len;
     }
     midi_part_fill(midi_saved);
@@ -1023,7 +1041,7 @@ static void settings_save(void)
         return;
     persist_fill(&p);
     {
-        uint8_t mp[MIDI_PART];
+        uint8_t mp[SET_PART];
         midi_part_fill(mp);
         if (!memcmp(&p, &persist_saved, sizeof p) && !memcmp(mp, midi_saved, sizeof mp) && !dsu_dirty)
             return;                                /* unchanged: no erase cycle */
