@@ -563,6 +563,7 @@ static void layer_knobs(uint32_t layer)
             int16_t *vp;
             const param_desc_t *d = home_param(k, &vp);
             *vp = (int16_t)clamp(*vp + accel(EN_K1 + k, s, d->max - d->min), d->min, d->max);
+            knob_popup(d, *vp);
             if (!is_drum(TSEL))
                 ml_knob(TSEL, ENGINES[TSEL->eng_req % NENGINES]->macro[k & 3u]);
             break;

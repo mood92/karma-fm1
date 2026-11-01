@@ -599,6 +599,22 @@ static void setlist_default(void)
         setlist[i] = (uint8_t)i;
     setlist_ready = 1;
 }
+/* a knob touched: its name and value in the message line for a moment (LIVE and HOME) */
+static void knob_popup(const param_desc_t *d, int16_t v)
+{
+    char val[12], b[24];
+    const char *unit;
+    uint32_t n;
+    param_format(d, v, val, &unit);
+    str_cpy(b, d->label, 12);
+    n = str_len(b);
+    b[n++] = ' ';
+    str_cpy(b + n, val, sizeof b - n);
+    n = str_len(b);
+    if (unit && unit[0] && n + 1u < sizeof b)
+        str_cpy(b + n, unit, sizeof b - n);
+    ui_message(b);
+}
 /* the name of slot s's sound on the selected track (12 characters + 0 at b) */
 static void setlist_name(uint32_t s, char *b)
 {
