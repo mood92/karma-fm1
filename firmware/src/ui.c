@@ -585,6 +585,56 @@ static int preset_go_to(track_t *t, uint32_t n)
     ui.force = 1;
     return 0;
 }
+/* LIVE SETLIST: 20 slots, each a list index of the PRESETS list (as preset_go_to takes it). The LIVE layer (hold
+ * LFO) turns the keys into the slots; MIDI Program Change 0..19 picks a slot (pc_poll) */
+#define SETLIST_N 20u
+static uint8_t setlist[SETLIST_N];
+static uint8_t live_slot = 0xFF;                     /* the slot last recalled (0xFF none) */
+static uint8_t setlist_ready;
+static void setlist_default(void)
+{
+    uint32_t i;
+    for (i = 0; i < SETLIST_N; i++)
+        setlist[i] = (uint8_t)i;
+    setlist_ready = 1;
+}
+/* the name of slot s's sound on the selected track (12 characters + 0 at b) */
+static void setlist_name(uint32_t s, char *b)
+{
+    uint32_t x = pl_entry(TSEL, setlist[s % SETLIST_N]);
+    b[0] = 0;
+    if (x < NBANK)
+        str_cpy(b, BANK[x].name, 13);
+    else if (x != 0xFFFFu)
+        up_name(x - NBANK, b);
+}
+/* a slot key (the LIVE layer): recall the slot's sound on the selected track; with OCT+ held, store the sound
+ * the track has now into the slot instead */
+static void live_key(uint32_t s)
+{
+    uint32_t tot;
+    char b[4];
+    if (s >= SETLIST_N)
+        return;
+    if (!setlist_ready)
+        setlist_default();
+    fmt_int(b, (int32_t)s + 1);
+    if (is_drum(TSEL)) {
+        ui_message("DRUM TRACK");
+        return;
+    }
+    if ((fm1_in.buttons >> panel.btn[B_OCTUP]) & 1u) {
+        setlist[s] = (uint8_t)preset_pos(&tot);
+        ui_say("STORED SLOT ", b);
+        return;
+    }
+    if (preset_go_to(TSEL, setlist[s])) {
+        ui_say("EMPTY SLOT ", b);
+        return;
+    }
+    live_slot = (uint8_t)s;
+    ui_say("SLOT ", b);
+}
 /* MIDI Program Change (2.6, after Felucca 1.5.1, PR #179 by @renebohne): seq.c queues it per track (the track its
  * channel plays, GLO > MIDI); here, in the main loop (a flash read, a sound loaded): a synth track takes the n-th sound
  * of the PRESETS list (0 the first factory sound, the user presets after the 153), the drum track kit n. A number past
@@ -599,6 +649,14 @@ static void pc_poll(void)
             continue;
         pc_req[i] = 0;
         n = r - 1u;
+        if (!is_drum(&trk[i])) {                       /* LIVE: the program is a setlist slot */
+            if (n >= SETLIST_N)
+                continue;
+            if (!setlist_ready)
+                setlist_default();
+            live_slot = (uint8_t)n;
+            n = setlist[n];
+        }
         if (is_drum(&trk[i])) {
             if (n >= DRUM_KITS)
                 continue;

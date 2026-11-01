@@ -142,7 +142,7 @@ static uint32_t scale_mask(const track_t *t)
 }
 
 /* ---------------------------------------------------------- layers --- */
-enum { LY_PLAY, LY_FX, LY_ERASE, LY_ROLL, LY_STEP, LY_SCALE, LY_MIX, LY_SONG, LY_COUNT };
+enum { LY_PLAY, LY_FX, LY_ERASE, LY_ROLL, LY_STEP, LY_SCALE, LY_MIX, LY_SONG, LY_LIVE, LY_COUNT };
 static uint32_t ly_bit[LY_COUNT];        /* the button (fm1_in.buttons bit) of each layer: the UI sets them */
 static uint32_t dyn_bit[2];              /* OCT- / OCT+: ghost / hard on the drum track */
 /* a layer locked open (its button held + HOME tapped: ui_input.c), LY_PLAY = none: the keys and knobs
@@ -1511,7 +1511,8 @@ static void key_down(uint32_t k)
     case LY_STEP:
     case LY_SCALE:
     case LY_MIX:
-    case LY_SONG:                                     /* the UI's: steps, the key, the mix, the sections */
+    case LY_SONG:
+    case LY_LIVE:                                     /* the UI's: steps, the key, the mix, the sections, the setlist */
         kb_kind[k] = KS_UI;
         kb_nt[k][0] = (uint8_t)layer;                 /* (its key-up goes to the same layer) */
         lk_push(layer, k, 1);

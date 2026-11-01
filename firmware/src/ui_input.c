@@ -140,6 +140,18 @@ static uint32_t keys_lit(void)
         if (play_led())
             m |= 1u << key_of_white(15);
         return m;
+    case LY_LIVE: {                                /* the setlist: every slot lit, the one playing blinks */
+        static const uint8_t BLK[4] = {1, 3, 5, 8};
+        for (i = 0; i < 16u; i++)
+            m |= 1u << key_of_white(i);
+        for (i = 0; i < 4u; i++)
+            m |= 1u << BLK[i];
+        if (live_slot < 16u && !blink)
+            m &= ~(1u << key_of_white(live_slot));
+        else if (live_slot >= 16u && live_slot < SETLIST_N && !blink)
+            m &= ~(1u << BLK[live_slot - 16u]);
+        return m | fm1_in.notes;
+    }
     case LY_ERASE:                                 /* the sounds the pattern holds (NOTES: dim, the hits lit) */
         return (lights_notes ? 0u : erase_lanes(t)) | fm1_in.notes | (lights_notes ? keys_sounding(t) : 0u);
     default:                                       /* playing, ARP roll, SAVE song, every page and the menu */
@@ -704,6 +716,9 @@ static void layer_tap(uint32_t layer)
     case LY_MIX:
         open_family(FAM_GLO);
         break;
+    case LY_LIVE:
+        open_family(FAM_LFO);
+        break;
     case LY_SONG:                                         /* SAVE tapped: TRACKS -> the song, else the SAVE pages */
         if (on_song_page())
             arrangement_save();
@@ -999,7 +1014,7 @@ static void ui_input(void)
         home_eat = 0;
     }
     pressed &= ~(ly_bit[LY_FX] | ly_bit[LY_ERASE] | ly_bit[LY_ROLL] | ly_bit[LY_STEP] | ly_bit[LY_SCALE] | ly_bit[LY_MIX] |
-                 ly_bit[LY_SONG]);
+                 ly_bit[LY_SONG] | ly_bit[LY_LIVE]);
     holds_input(pressed, fm1_ms);
     pressed &= ~((on_song_page() ? 0u : 1u << panel.btn[B_REC]) | (1u << panel.btn[B_SAVE]));
     if (layered || ui.hold_kind) {                      /* a layer / a hold: the rest waits */

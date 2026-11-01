@@ -20,8 +20,8 @@
  * The keys' part runs in the audio ISR (seq.c layer_now: no lag, no lost press); the SEQ, SEL and
  * GLO keys come to the UI through seq.c lk_q. HOLD: REC held clears the track, SAVE held saves the
  * project (a ring fills; let go before and nothing happens). */
-static const uint8_t LAYER_BTN[LY_COUNT] = {NB, B_FX, B_EDIT, B_ARP, B_SEQ, B_SCL, B_GLO, B_SAVE};
-static const char *const LAYER_NAME[LY_COUNT] = {"", "punch", "erase", "roll", "steps", "key", "mix", "song"};
+static const uint8_t LAYER_BTN[LY_COUNT] = {NB, B_FX, B_EDIT, B_ARP, B_SEQ, B_SCL, B_GLO, B_SAVE, B_LFO};
+static const char *const LAYER_NAME[LY_COUNT] = {"", "punch", "erase", "roll", "steps", "key", "mix", "song", "live"};
 static void section_store(uint32_t s);                  /* project.c */
 static void section_load(uint32_t s);
 static uint8_t sec_armed;                               /* store over a used section: the key again within 3 s */
@@ -356,6 +356,14 @@ static void layer_key(uint32_t layer, uint32_t k, uint32_t down)
         ui_say("KEY ", N_NOTE[root]);
         return;
     }
+    case LY_LIVE: {                                     /* the setlist: white keys slots 1..16, black keys 17..20 */
+        static const int8_t PGL[12] = {-1, 0, -1, 1, -1, 2, -1, -1, 3, -1, -1, -1};
+        if (w >= 0)
+            live_key((uint32_t)w);
+        else if (k < 12u && PGL[k] >= 0)
+            live_key(16u + (uint32_t)PGL[k]);
+        return;
+    }
     case LY_SONG: {                                     /* sections A..D: play, store; loop / song; SONG REC */
         char b[2] = {0, 0};
         if (w < 0)
@@ -551,6 +559,14 @@ static void layer_knobs(uint32_t layer)
                 t->p[P_TRANS] = (int16_t)clamp(t->p[P_TRANS] + s, -24, 24);
             }
             break;
+        case LY_LIVE: {                                 /* the sound's four main knobs, as on HOME */
+            int16_t *vp;
+            const param_desc_t *d = home_param(k, &vp);
+            *vp = (int16_t)clamp(*vp + accel(EN_K1 + k, s, d->max - d->min), d->min, d->max);
+            if (!is_drum(TSEL))
+                ml_knob(TSEL, ENGINES[TSEL->eng_req % NENGINES]->macro[k & 3u]);
+            break;
+        }
         case LY_MIX: {
             int16_t *lv = k == TRK_DRUM ? &song.g[G_DRLVL] : &trk[k].p[P_LEVEL];
             *lv = (int16_t)clamp(*lv + accel(EN_K1 + k, s, 127), 0, 127);
@@ -968,6 +984,35 @@ static void layer_screen_draw(void)
             lab[i] = L[i];
             fmt_int(v[i], (int32_t)lv * 100 / 127);
             ratio[i] = (int32_t)lv * 1000 / 127;
+        }
+        break;
+    }
+    case LY_LIVE: {                                     /* the setlist: slot names on the 16 white keys */
+        char nm[13];
+        if (!setlist_ready)
+            setlist_default();
+        col = C_WHITE;
+        for (i = 0; i < 16u; i++) {
+            int cur = live_slot == (uint8_t)i;
+            setlist_name(i, nm);
+            te_lower(tl[i].lab, nm, 8);
+            tl[i].bg = cur ? C_WHITE : TE_G1;
+            tl[i].fg = cur ? C_BLACK : C_WHITE;
+            tl[i].top = cur ? 0 : TE_DIM[i / 4u];
+        }
+        if (live_slot < SETLIST_N) {
+            setlist_name(live_slot, nm);
+            te_lower(sub, nm, sizeof sub);
+        } else {
+            str_cpy(sub, "pick a slot", sizeof sub);
+        }
+        for (i = 0; i < 4u; i++) {
+            int16_t *vp;
+            const param_desc_t *d = home_param(i, &vp);
+            const char *u;
+            lab[i] = d->label;
+            param_format(d, *vp, v[i], &u);
+            ratio[i] = RATIO(d, *vp);
         }
         break;
     }
