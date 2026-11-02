@@ -331,6 +331,7 @@ enum {
     BASS303_CUTOFF, BASS303_RESO, BASS303_ENVMOD, BASS303_DECAY,     /* page 1 */
     BASS303_ACCENT, BASS303_WAVE, BASS303_TUNE, BASS303_VOLUME,      /* page 2 */
     BASS303_DRIVE, BASS303_DRVTYPE, BASS303_SLIDE, BASS303_ACCDEC,   /* page 3 */
+    BASS303_POS, BASS303_MOTION,   /* ACID MAX: the shape's POSITION and the slow MOTION that sweeps it (WAVE >= 2) */
     BASS303_NPARAMS
 };
 enum { BASS303_DRV_OFF, BASS303_DRV_SOFT, BASS303_DRV_RAT };
@@ -351,7 +352,9 @@ typedef struct bass303 {
     float amp_scaler;        /* volume, linear */
     float decay_c, accdec_c; /* main-envelope multipliers for normal / accented notes */
     float slew_c;            /* pitch slew-limiter coefficient */
-    int wave;                /* 0 saw, 1 square */
+    int wave;                /* 0 saw, 1 square; ACID MAX: 2.. the B3W_* shapes (b3_osc_ext) */
+    float pos, motion;       /* 0..1: the shape's position, the depth of its slow sweep */
+    float mot_ph;            /* the sweep's phase, turns */
     int drv_type;
     float drv_amt;
 
@@ -434,7 +437,8 @@ static int bass303_get(const bass303_t *b, int i);
 
 /* ---- parameters ------------------------------------------------------------------------ */
 
-static const char *const b3_wave_names[] = { "Saw", "Sqr" };
+static const char *const b3_wave_names[] = { "Saw", "Sqr", "Morph", "Fold", "Formant", "WT Classic", "WT Sync", "WT Vocal", "WT FM",
+                                             "WT Digital" };
 static const char *const b3_drv_names[] = { "Off", "Soft", "RAT" };
 
 /* defaults are schwung-303's (every knob at 0.5, Devilfish values stock), except Volume,
@@ -445,13 +449,15 @@ static const x0x_param_t b3_params[BASS303_NPARAMS] = {
     { "EnvMod", 127, 64, 0 },        /* 0 .. 100 % */
     { "Decay", 127, 64, 0 },         /* 200 .. 2000 ms, exponential (stock 303 range) */
     { "Accent", 127, 64, 0 },        /* 0 .. 100 % */
-    { "Wave", 1, 0, b3_wave_names },
+    { "Wave", 9, 0, b3_wave_names },     /* 0, 1: the 303 oscillators; 2..9: ACID MAX shapes */
     { "Tune", 127, 64, 0 },          /* A4 = 440 + (pot - 64) * 0.625 Hz: 400 .. 479.4 */
     { "Volume", 127, 96, 0 },        /* -60 .. 0 dB; 96 = -14.6 dB: peaks ~0.5 (schwung-303: 102) */
     { "Drive", 127, 0, 0 },          /* 0 = bypass */
     { "DrvTyp", 2, 1, b3_drv_names },
     { "Slide", 127, 21, 0 },         /* 2 .. 360 ms (Devilfish); 21 = 61 ms, stock is 60 */
     { "AccDec", 127, 7, 0 },         /* 30 .. 3000 ms (Devilfish); 7 = 194 ms, stock is 200 */
+    { "Pos", 127, 0, 0 },            /* ACID MAX: where the shape is (WAVE >= 2) */
+    { "Motion", 127, 0, 0 },         /* ACID MAX: how far a slow sweep moves it */
 };
 
 static int bass303_nparams(void) { return BASS303_NPARAMS; }
@@ -603,6 +609,12 @@ static void bass303_set(bass303_t *b, int i, int v)
         break;
     case BASS303_WAVE:
         b->wave = v;
+        break;
+    case BASS303_POS:
+        b->pos = n;
+        break;
+    case BASS303_MOTION:
+        b->motion = n;
         break;
     case BASS303_TUNE:
         b->tuning = 440.0f + (float)(v - 64) * 0.625f;
@@ -929,6 +941,90 @@ static void b3_drive_block(bass303_t *b, float *out, int n)
     }
 }
 
+
+/* ---- ACID MAX oscillator shapes (WAVE >= 2) ----------------------------------------------------------------------
+ * Six shapes and, in WAVETABLE mode, five tables, each swept by POSITION (and moved by MOTION). Computed from the
+ * phase (turns) with polyBLEP on the hard edges, so no table is stored: the filter after it (the 303's ladder) does
+ * the rest. WAVE: 2 MORPH, 3 FOLD, 4 FORMANT, 5 WT CLASSIC, 6 WT SYNC, 7 WT VOCAL, 8 WT FM, 9 WT DIGITAL. */
+enum { B3W_SAW, B3W_SQR, B3W_MORPH, B3W_FOLD, B3W_FORMANT, B3W_WT_CLASSIC, B3W_WT_SYNC, B3W_WT_VOCAL, B3W_WT_FM,
+       B3W_WT_DIGITAL, B3W_N };
+
+static inline float b3_fract(float x) { return x - fm_floorf(x); }
+static inline float b3_sint(float t) { return fm_sinf(t * FM_TWO_PI); }
+static inline float b3_ramp(float t, float inc) { return t + t - 1.0f - b3_blep(t, inc); }   /* the rising saw, -1 .. 1 */
+/* a pulse of width w (0.05 .. 0.5), the two edges band-limited, peak 1 */
+static inline float b3_pulse(float t, float inc, float w)
+{
+    return (b3_ramp(t, inc) - b3_ramp(b3_fract(t - w + 1.0f), inc)) * (0.5f / (1.0f - w));
+}
+/* a window that is 0 at the end of the cycle and a sine that is 0 at its start: any ratio k is click-free */
+static inline float b3_res(float t, float k)
+{
+    float w = 1.0f - t;
+    return w * w * b3_sint(t * k);
+}
+/* the two formants of a vowel as multiples of the pitch (A2 as the reference), "ooh" at 0 to "eee" at 1 */
+static inline float b3_vowel(float t, float v)
+{
+    float r1 = 2.7f - 0.25f * v, r2 = 7.9f + 8.1f * v;
+    return b3_res(t, r1) + 0.6f * b3_res(t, r2);
+}
+/* each shape's level against the 303's saw, averaged over POSITION (tests/acidmax_osc_test.c, CAL=1) */
+static const float B3W_GAIN[B3W_N] = {1.0f, 1.0f, 1.39f, 0.92f, 1.50f, 1.20f, 1.21f, 1.18f, 0.95f, 1.01f};
+
+static inline float b3_osc_ext(int wv, float t, float inc, float pos)
+{
+    float s, a, k, f;
+    switch (wv) {
+    case B3W_MORPH:                                        /* sine to pulse on one knob (the pulse narrows) */
+        s = (1.0f - pos) * b3_sint(t) + pos * b3_pulse(t, inc, 0.5f - 0.4f * pos);
+        break;
+    case B3W_FOLD:                                         /* a sine folded back on itself, more as POSITION rises */
+        s = fm_sinf(1.5707963f * (1.0f + 7.0f * pos) * b3_sint(t));
+        break;
+    case B3W_FORMANT:                                      /* vowel resonances on a saw: POSITION is the resonance's ratio */
+        s = 0.5f * b3_ramp(t, inc) + 1.4f * b3_res(t, 1.0f + 7.0f * pos);
+        break;
+    case B3W_WT_CLASSIC:                                   /* sine to saw to formant */
+        if (pos < 0.5f) {
+            a = pos + pos;
+            s = (1.0f - a) * b3_sint(t) + a * b3_ramp(t, inc);
+        } else {
+            a = (pos - 0.5f) * 2.0f;
+            s = (1.0f - a) * b3_ramp(t, inc) + a * (0.5f * b3_ramp(t, inc) + 1.4f * b3_res(t, 4.0f));
+        }
+        break;
+    case B3W_WT_SYNC: {                                    /* hard-sync scream: a saw at 1 .. 8 times the pitch, reset each cycle */
+        float r = 1.0f + 7.0f * pos;
+        s = 0.9f * b3_ramp(b3_fract(t * r), inc * r);
+        break;
+    }
+    case B3W_WT_VOCAL:                                     /* talking acid: "ooh" to "eee" */
+        s = 0.35f * b3_ramp(t, inc) + 1.5f * b3_vowel(t, pos);
+        break;
+    case B3W_WT_FM: {                                      /* soft bass to metallic bells: two whole ratios blended */
+        float x = pos * 3.0f, idx = 0.5f + 4.0f * pos;
+        int i = (int)x;
+        f = x - (float)i;
+        idx *= 1.0f / FM_TWO_PI;                           /* (the index in turns: b3_sint takes turns) */
+        a = b3_sint(t + idx * b3_sint(t * (float)(i + 1)));
+        k = b3_sint(t + idx * b3_sint(t * (float)(i + 2)));
+        s = (1.0f - f) * a + f * k;
+        break;
+    }
+    case B3W_WT_DIGITAL: {                                 /* stepped, bit-crushed grit: fewer steps and levels as POSITION rises */
+        float n = 32.0f - 28.0f * pos, lv = 64.0f - 58.0f * pos;
+        s = 2.0f * fm_floorf(t * n) / n - 1.0f;
+        s = fm_floorf(s * lv + 0.5f) / lv;
+        break;
+    }
+    default:
+        s = b3_ramp(t, inc);
+        break;
+    }
+    return s * B3W_GAIN[wv < B3W_N ? wv : 0];
+}
+
 static const float recip[5] = { 0.0f, 1.0f, 0.5f, 0.333333343f, 0.25f };
 
 static void b3_run(bass303_t *b, float *out, int n)
@@ -951,7 +1047,8 @@ static void b3_run(bass303_t *b, float *out, int n)
     const float fb_b0 = lite ? b->fbhpl_b0 : b->fbhp_b0, fb_a1 = lite ? b->fbhpl_a1 : b->fbhp_a1;
     const float sq_dc = b->sq_dc, sq_h2 = 0.5f * b->sq_h;
     const float out_gain = b->amp_scaler;
-    const int square = b->wave;
+    const int wv = b->wave;
+    float pe = b->pos;                                  /* the shape's position, swept by MOTION (WAVE >= 2) */
     float os[BASS303_OS];
 
     for (i = 0; i < n; i += m) {
@@ -965,6 +1062,12 @@ static void b3_run(bass303_t *b, float *out, int n)
         b->rc1_y = b->rc1_pw[m] * b->rc1_y + b->g1[m] * e0;    /* RC followers of it */
         b->rc2_y = b->rc2_pw[m] * b->rc2_y + (acc > 0.0f ? b->g2[m] * e0 : 0.0f);
         b->slew_y = osc_freq + b->slew_pw[m] * (b->slew_y - osc_freq);
+        if (wv >= 2) {                                         /* MOTION: a slow triangle moves POSITION either way */
+            b->mot_ph += (float)m * (1.5f / BASS303_SR);
+            if (b->mot_ph >= 1.0f)
+                b->mot_ph -= 1.0f;
+            pe = fm_clampf(b->pos + 0.5f * b->motion * (1.0f - 4.0f * fm_fabsf(b->mot_ph - 0.5f)), 0.0f, 1.0f);
+        }
         if (b->amp_trig) {                                     /* attack 0: 1, then decay */
             b->amp_y = amp_pw[m - 1];
             b->amp_trig = 0;
@@ -1025,7 +1128,9 @@ static void b3_run(bass303_t *b, float *out, int n)
             {
                 int q;
                 for (q = 0; q < nos; q++) {
-                    if (!square) {
+                    if (wv >= 2) {                                  /* ACID MAX shapes */
+                        s = b3_osc_ext(wv, phase, inc, pe);
+                    } else if (wv == 0) {
                         t = phase + 0.5f;                       /* Saw303: rises -1..1, jump at p = .5 */
                         if (t >= 1.0f)
                             t -= 1.0f;
