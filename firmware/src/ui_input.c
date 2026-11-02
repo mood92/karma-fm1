@@ -473,6 +473,7 @@ static void edit_param(uint32_t slot, int32_t steps)
     v = d->names == ESYNC_NAMES || d->names == N_IBITS || d->names == N_IRATE ? names_turn(d, *vp, steps)   /* (a name a detent) */
                                     : clamp(*vp + accel(EN_K1 + slot, steps, d->max - d->min), d->min, d->max);
     *vp = (int16_t)v;
+    knob_popup(slot, d, *vp);
     if (pg->scope != SC_GLOBAL && p_lockable(id))
         ui.lock_par = (uint8_t)id;                        /* the SEQ layer's lock parameter: the last one touched */
     if (pg->scope != SC_GLOBAL)
@@ -1035,6 +1036,7 @@ static void ui_input(void)
     if (layered || ui.hold_kind) {                      /* a layer / a hold: the rest waits */
         if ((s = panel_enc(EN_SELECT)) != 0) {           /* (the tempo always) */
             song.g[G_BPM] = (int16_t)clamp(song.g[G_BPM] + accel(EN_SELECT, s, 200), GP[G_BPM].min, GP[G_BPM].max);
+            { char tb[8]; fmt_int(tb, song.g[G_BPM]); knob_say(0u, "TEMPO", tb); }
             ui.bpm_t = 40;
         }
         panel_enc(EN_ALGO);                             /* (track and sound wait: no jump afterwards) */
@@ -1139,6 +1141,7 @@ static void ui_input(void)
     if ((s = panel_enc(EN_SELECT)) != 0 && (rec_wait || ft_on || !page_walk(s))) {   /* SELECT: the pages of the
                                                      * family shown, else (and on the REC screen) the tempo */
         song.g[G_BPM] = (int16_t)clamp(song.g[G_BPM] + accel(EN_SELECT, s, 200), GP[G_BPM].min, GP[G_BPM].max);
+            { char tb[8]; fmt_int(tb, song.g[G_BPM]); knob_say(0u, "TEMPO", tb); }
         ui.bpm_t = 40;                              /* the header's BPM lights up; no message over the header */
     }
     for (k = 0; k < 4u; k++) {

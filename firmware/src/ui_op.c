@@ -34,6 +34,8 @@ static void op_header(const char *tag, uint16_t tc, const char *title, uint32_t 
     uint32_t sig = studio_hash((uint32_t)song.g[G_BPM] * 7u + playing * 3u + (song.rec != 0) * 1999u +
                                (playing ? beat * 131u : 0u) + (ui.bpm_t != 0) * 104729u + (uint32_t)batt_shown() * 7777u, title);
     sig = studio_hash(sig * 31u + tc, tag);
+    if (pop.t)
+        sig = studio_hash(sig * 3u + (uint32_t)pop.ratio + pop.k, pop.val) + 1u;
     if (!ui.force && sig == *cache)
         return;
     *cache = sig;
@@ -43,6 +45,16 @@ static void op_header(const char *tag, uint16_t tc, const char *title, uint32_t 
         w = w < 38 ? 38 : w;
         op_box(2, 1, w, 18, tc);
         te_text_c(2 + w / 2, 2, tag, tc);
+        if (pop.t) {                                   /* a knob touched: its name and value, in the same place every time */
+            uint16_t pc = TE_COL[pop.k & 3u];
+            cv_text(w + 8, 2, &FONT_S, pop.lab, pc);
+            cv_text(236 - text_w(&FONT_S, pop.val), 2, &FONT_S, pop.val, C_WHITE);
+            if (pop.ratio >= 0)
+                cv_rect(w + 8, 18, (236 - (w + 8)) * pop.ratio / 1000 + 1, 2, pc);
+            cv_rect(0, OP_HEAD_H - 1, 240, 1, TE_G1);
+            cv_blit(0, 0);
+            return;
+        }
         str_cpy(b, title, 10);
         while (b[0] && w + 8 + text_w(&FONT_S, b) > 98)
             b[str_len(b) - 1u] = 0;

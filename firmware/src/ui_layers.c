@@ -674,12 +674,20 @@ static void layer_title(const char *name, const char *sub, uint16_t col, uint32_
 {
     uint32_t locked = ly_lock != LY_PLAY;
     uint32_t sig = studio_hash(studio_hash(col, name), sub) + (ui.msg_t ? studio_hash(3u, ui.msg) : 0u) + locked * 7919u;
+    if (pop.t)
+        sig = studio_hash(sig + (uint32_t)pop.ratio + pop.k, pop.val) + 1u;
     if (!ui.force && sig == *cache)
         return;
     *cache = sig;
     cv_begin(240, 40, C_BLACK);
     cv_text(4, 2, &FONT_L, name, col);
-    cv_text(4 + text_w(&FONT_L, name) + 10, 18, &FONT_S, ui.msg_t ? ui.msg : sub, ui.msg_t ? C_WHITE : TE_G3);
+    if (pop.t) {                                          /* a knob touched: its name and value, in the same place every time */
+        int32_t px = 4 + (int32_t)text_w(&FONT_L, name) + 10;
+        cv_text(px, 18, &FONT_S, pop.lab, TE_COL[pop.k & 3u]);
+        cv_text(px + (int32_t)text_w(&FONT_S, pop.lab) + 8, 18, &FONT_S, pop.val, C_WHITE);
+    } else {
+        cv_text(4 + text_w(&FONT_L, name) + 10, 18, &FONT_S, ui.msg_t ? ui.msg : sub, ui.msg_t ? C_WHITE : TE_G3);
+    }
     if (locked) {                                         /* locked open (HOME): any button lets it go */
         int32_t w = (int32_t)text_w(&FONT_S, "LOCK") + 8;
         cv_rect(236 - w, 4, w, 15, C_WHITE);

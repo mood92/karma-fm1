@@ -606,6 +606,14 @@ static struct {
     int32_t ratio;
     uint8_t k, t;
 } pop;
+static void knob_say(uint32_t k, const char *lab, const char *val)   /* a name and a value, no gauge */
+{
+    str_cpy(pop.lab, lab, sizeof pop.lab);
+    str_cpy(pop.val, val, sizeof pop.val);
+    pop.ratio = -1;
+    pop.k = (uint8_t)(k & 3u);
+    pop.t = 45;
+}
 static void knob_popup(uint32_t k, const param_desc_t *d, int16_t v)
 {
     char val[12];
@@ -621,16 +629,17 @@ static void knob_popup(uint32_t k, const param_desc_t *d, int16_t v)
     pop.k = (uint8_t)(k & 3u);
     pop.t = 45;
 }
-/* the name of slot s's sound on the selected track (12 characters + 0 at b) */
-static void setlist_name(uint32_t s, char *b)
+/* the name of list entry n on the selected track (12 characters + 0 at b) */
+static void list_name(uint32_t n, char *b)
 {
-    uint32_t x = pl_entry(TSEL, setlist[s % SETLIST_N]);
+    uint32_t x = pl_entry(TSEL, n);
     b[0] = 0;
     if (x < NBANK)
         str_cpy(b, BANK[x].name, 13);
     else if (x != 0xFFFFu)
         up_name(x - NBANK, b);
 }
+static void setlist_name(uint32_t s, char *b) { list_name(setlist[s % SETLIST_N], b); }
 /* a slot key (the LIVE layer): recall the slot's sound on the selected track; with OCT+ held, store the sound
  * the track has now into the slot instead */
 static void live_key(uint32_t s)
@@ -711,6 +720,11 @@ static void preset_go(uint32_t n)                    /* load list index n into t
         select_engine(e);
     apply_preset(k);
     ui.force = 1;
+    {
+        char nm[13];
+        list_name(n, nm);
+        knob_say(1u, "SOUND", nm);
+    }
 }
 
 /* HOME: what KNOB k edits: the engine's four main parameters; on the drum track
@@ -739,6 +753,10 @@ static void track_select(uint32_t i)
     if (i >= NPART || i == song.sel)                 /* (MAIN MENU: the three lanes; the drum track stays out of reach) */
         return;
     song.sel = (uint8_t)i;
+    {
+        char ln[2] = {(char)('1' + i), 0};
+        knob_say(2u, "LANE", ln);
+    }
     rec_follow(i);                                   /* LIVE: recording follows the selected track */
     ui.entry_open = 0;
     ui.cursor = 0;

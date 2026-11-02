@@ -737,20 +737,15 @@ static int boot_draw(void)
     for (pass = 0; pass < 2u; pass++) {
         cv_begin(240, 120, C_BLACK);
         cv_oy = -(int32_t)(pass * 120u);
-        for (y = 0; y < (uint32_t)MM_LOGO_H; y++)               /* the Main Menu mark, each cell its own moment */
-            for (x = 0; x < (uint32_t)MM_LOGO_W; x++) {
-                uint32_t i = y * (uint32_t)MM_LOGO_W + x, v = (MM_LOGO[i >> 1] >> ((i & 1u) * 4u)) & 15u, d, s;
+        for (y = 0; y < (uint32_t)MM_LOGO_L; y++)               /* the Main Menu mark: smooth grey, a sweep across */
+            for (x = 0; x < (uint32_t)MM_LOGO_L; x++) {
+                uint32_t i = y * (uint32_t)MM_LOGO_L + x, g = (MM_LOGO_BIG[i >> 1] >> ((i & 1u) * 4u)) & 15u;
                 uint16_t c;
-                if (!v)
+                if (!g || t < (x + y) * 44u / 96u)
                     continue;
-                d = ((x * 7u + y * 13u) * 2654435761u >> 26) % 44u;
-                if (t < d)
-                    continue;
-                s = t - d >= 3u ? 4u : t - d + 1u;
-                c = t - d < 4u ? C_WHITE : v == 3u ? C_WHITE : COL[(x + y) / 8u % 4u];
+                c = mix565(C_WHITE, C_BLACK, (int32_t)(15u - g) * 17);
                 c = mix565(c, C_BLACK, fade);
-                cv_rect(80 + (int32_t)(x * 4u) + (4 - (int32_t)s) / 2, 56 + (int32_t)(y * 4u) + (4 - (int32_t)s) / 2,
-                        (int32_t)s, (int32_t)s, c);
+                cv_rect(72 + (int32_t)(x * 2u), 44 + (int32_t)(y * 2u), 2, 2, c);
             }
         (void)ROW;
         for (x = 0; x < 4u; x++) {                              /* the tracks' bars */
