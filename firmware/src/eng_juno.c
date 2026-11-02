@@ -125,6 +125,22 @@ static const preset_t JUNO_PRESETS[] = {
     {"808 SUB", {0, 0, 127, 0, 10, 0, 10, 0}, {0, 0, 127, 40}, 0, 1, FX(0, 0, 0, 0)},
     /* electro bass stab (Drexciya/Aux 88) -- short, dry square, a fast filter envelope snap. */
     {"ELECTRO BASS", {1, 0, 0, 0, 35, 20, 90, 0}, {0, 15, 0, 10}, 0, 1, FX(0, 0, 0, 0)},
+    /* leads and arps, appended at the end (see the note above). */
+    /* Minimoog/Model D lead -- warm, fat, mono, with portamento (glide). */
+    {"MINIMOOG LD", {0, 0, 0, 0, 55, 20, 60, 0}, {0, 50, 100, 25}, 0, 1, FX(0, 0, 10, 14), XP(P_GLIDE + 1, 30)},
+    /* Juno-106 pulse lead -- PWM'd and lightly chorused, simple and clean. */
+    {"JUNO PULSE", {1, 50, 0, 0, 40, 20, 30, 1}, {0, 30, 90, 15}, 0, 1, FX(0, 0, 10, 10), XP(P_LD_SHP + 1, 40, P_LRATE + 1, 25)},
+    /* Roland SH-101 lead -- sharp and thin, a fast LFO vibrato, the electro/early-techno staple. */
+    {"SH101 LEAD", {1, 20, 0, 0, 55, 40, 65, 0}, {0, 20, 100, 12}, 0, 1, FX(0, 0, 8, 8), XP(P_LD_SHP + 1, 60, P_LRATE + 1, 55)},
+    /* Prophet-5 lead -- smooth, polysynth-y (S+P wave), chorused; Cybotron-era Detroit electro. */
+    {"PROPHET LD", {2, 45, 0, 0, 45, 30, 60, 1}, {0, 55, 95, 30}, 0, 1, FX(0, 0, 12, 16), XP(P_GLIDE + 1, 16)},
+    /* square-wave "Clear" melody (Cybotron/Juan Atkins) -- plain pulse, no chorus, no glide: robotic and dry. */
+    {"CLEAR MELODY", {1, 0, 0, 0, 20, 10, 50, 0}, {0, 10, 110, 10}, 0, 1, FX(0, 0, 6, 6)},
+    /* Drexciya-style bubbly arpeggio -- fast UP arp over a simple analog mono voice. */
+    {"DREX ARP", {1, 35, 0, 0, 50, 20, 55, 0}, {0, 15, 90, 10}, 0, 1, FX(0, 0, 14, 16), ARP(1, 100, 1, 70)},
+    /* Juno/Jupiter arp -- a slower, filtered arpeggio that gradually opens up (a longer attack on the
+     * filter envelope). */
+    {"JUP ARP", {0, 0, 0, 0, 60, 15, 70, 2}, {25, 60, 100, 30}, 0, 1, FX(0, 0, 16, 20), ARP(1, 40, 1, 70)},
 };
 
 static const engine_t ENG_JUNO = {

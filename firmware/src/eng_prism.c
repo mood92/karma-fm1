@@ -299,6 +299,12 @@ static const preset_t PRISM_PRESETS[] = {
     {"JAZZY EP", {8, 45, 30, 55, 50, 0, 0, 0}, {10, 55, 70, 60}, 0, 0, FX(0, 10, 10, 55), XP(P_CHORD + 1, 3)},
     /* slap/pluck bass (D-50/JV-1080 style) -- a quick, sampled-style transient, common in 90s garage-house. */
     {"SLAP BASS", {2, 20, 30, 20, 80, 0, 0, 0}, {0, 20, 10, 15}, 0, 1, FX(0, 0, 0, 8)},
+    /* Korg MS-20 lead/sweep -- very resonant and a bit screamy (PRISM's own VCF model), common in
+     * electro/industrial. */
+    {"MS20 LEAD", {6, 95, 70, 40, 70, 0, 0, 0}, {0, 40, 90, 15}, 0, 1, FX(0, 0, 14, 10), XP(P_GLIDE + 1, 10)},
+    /* warm vocoder lead (Korg/Roland vocoder lines) -- the formant model, brighter and more mono-lead voiced
+     * than FORMANT VOX's pad setting. */
+    {"VOCODER LD", {12, 70, 70, 50, 45, 0, 0, 0}, {0, 55, 90, 25}, 0, 1, FX(0, 20, 14, 30)},
 };
 
 /* CHORD: its three controls by what they do there */
