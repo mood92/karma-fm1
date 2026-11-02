@@ -89,23 +89,10 @@ static void elem_render(track_t *t, voice_t *v, int32_t *out, uint32_t n, const 
  * in tune now) */
 static const preset_t ELEM_PRESETS[] = {
     /* name, {MODEL, STRC, BRIT, DAMP, POS, ACC, .., ..}, {A D S R}, fenv, mono */
-    /* BOUNC: {MODEL, STRC, BRIT, DAMP, POS, ACC, LAST, EXC}; PICK: {.., GAP, EXC} (Elements' strikes) */
-    {"BOUNCE BAR", {EM_BOUNCE, 116, 60, 70, 24, 100, 70, 20}, {0, 100, 127, 60}, 0, 0, FX(0, 0, 14, 34)},
-    {"MARBLES", {EM_BOUNCE, 98, 100, 50, 10, 110, 40, 40}, {0, 100, 127, 40}, 0, 0, FX(0, 0, 20, 30)},
-    {"RATTLE BELL", {EM_BOUNCE, 70, 90, 110, 12, 90, 110, 6}, {0, 100, 127, 96}, 0, 0, FX(0, 10, 24, 56)},
-    {"PICKED BAR", {EM_PICK, 116, 70, 80, 24, 100, 50, 20}, {0, 100, 127, 56}, 0, 0, FX(0, 0, 16, 32)},
-    {"PICK CHIME", {EM_PICK, 70, 104, 112, 10, 100, 90, 10}, {0, 100, 127, 96}, 0, 0, FX(0, 12, 26, 60)},
-    /* BOW: {MODEL, STRC, BRIT, DAMP, POS, ACC, BOW, TONE}; BLOW: {.., BLOW, TONE} (Elements' bow and blow; one note) */
-    {"BOW STRING", {EM_BOW, 34, 60, 100, 12, 80, 100, 80}, {30, 90, 127, 70}, 0, 0, FX(0, 14, 10, 50)},
-    {"BOW GLASS", {EM_BOW, 98, 80, 118, 8, 60, 110, 90}, {50, 90, 127, 100}, 0, 0, FX(0, 24, 20, 72)},
-    {"BOW BASS", {EM_BOW, 34, 45, 96, 16, 110, 100, 70}, {10, 90, 127, 50}, 0, 1, FX(0, 0, 0, 20), XP(P_TRANS + 1, -12)},
-    {"PIPE", {EM_BLOW, 34, 60, 100, 12, 80, 127, 80}, {20, 90, 127, 60}, 0, 0, FX(0, 10, 16, 50)},
-    {"BREATHY", {EM_BLOW, 34, 70, 90, 12, 80, 50, 90}, {30, 90, 127, 70}, 0, 0, FX(0, 16, 20, 56)},
-    {"BLOWN BELL", {EM_BLOW, 70, 100, 120, 12, 100, 110, 110}, {10, 90, 127, 100}, 0, 0, FX(0, 20, 24, 66)},
-    /* OMIN: {MODEL, RATIO, FM, FDBK, DTUNE, BRIT, SHAPE, SPACE} (her Ominous Voice; one note) */
-    {"OMINOUS", {EM_OMIN, 64, 70, 50, 30, 60, 40, 60}, {60, 90, 127, 90}, 0, 1, FX(0, 20, 20, 60), XP(P_TRANS + 1, 12)},
-    {"DARK DRONE", {EM_OMIN, 30, 90, 80, 50, 40, 20, 90}, {90, 90, 127, 110}, 0, 1, FX(0, 30, 24, 70)},
-    {"OMEN BELL", {EM_OMIN, 100, 60, 20, 10, 90, 70, 30}, {0, 90, 60, 90}, 0, 1, FX(0, 10, 26, 56), XP(P_TRANS + 1, 12)},
+    /* Rhodes Juno Sketch reference, LEADS bank: flute-tagged entries -> EM_BLOW (breath/blown character) */
+    {"FLUTE LEAD", {EM_BLOW, 40, 75, 85, 14, 80, 100, 100}, {15, 80, 127, 50}, 0, 1, FX(0, 10, 14, 40), XP(P_GLIDE + 1, 15)},
+    {"WHISTLE", {EM_BLOW, 20, 70, 70, 8, 50, 60, 100}, {5, 60, 127, 30}, 0, 1, FX(0, 8, 10, 30)},
+    {"SINE GLIDE", {EM_BLOW, 10, 30, 110, 20, 90, 110, 20}, {20, 90, 127, 60}, 0, 1, FX(0, 5, 12, 35), XP(P_GLIDE + 1, 35)},
 };
 
 static const engine_t ENG_ELEM = {

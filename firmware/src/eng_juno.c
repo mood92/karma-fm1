@@ -84,69 +84,43 @@ static void juno_post(track_t *t, int32_t *out, uint32_t n)
 
 static const preset_t JUNO_PRESETS[] = {
     /* name, {WAVE, PW, SUB, NOISE, CUT, RES, ENV, CHOR}, {A D S R}, fenv, mono */
-    {"JUNO BRASS", {0, 0, 0, 0, 34, 20, 70, 1}, {12, 60, 80, 30}, 0, 0, FX(0, 0, 0, 10)},
-    {"JUNO STRING", {2, 40, 0, 0, 70, 10, 10, 2}, {60, 70, 110, 70}, 0, 0, FX(0, 0, 0, 20), XP(P_LD_SHP + 1, 40, P_LRATE + 1, 40)},
-    {"JUNO PAD", {1, 60, 40, 0, 50, 30, 30, 2}, {80, 90, 100, 90}, 0, 0, FX(0, 0, 10, 30), XP(P_LD_SHP + 1, 60, P_LRATE + 1, 30)},
-    {"JUNO BASS", {1, 30, 90, 0, 22, 40, 60, 0}, {0, 40, 50, 10}, 0, 1, FX(0, 0, 0, 0)},
-    {"SUB 106", {0, 0, 127, 0, 18, 10, 40, 0}, {0, 50, 90, 10}, 0, 1, FX(0, 0, 0, 0)},
-    {"JUNO KEYS", {1, 20, 30, 0, 30, 15, 80, 1}, {0, 70, 30, 40}, 0, 0, FX(0, 0, 8, 16)},
-    {"JUNO STAB", {0, 0, 50, 0, 50, 60, 75, 1}, {0, 55, 20, 25}, 0, 0, FX(0, 0, 14, 12)},
-    {"JUNO LEAD", {2, 50, 0, 0, 55, 50, 40, 1}, {0, 60, 100, 20}, 0, 1, FX(0, 0, 12, 10), XP(P_GLIDE + 1, 20)},
-    {"JUNO SWEEP", {0, 0, 40, 10, 10, 100, 110, 2}, {70, 110, 60, 80}, 0, 0, FX(0, 0, 10, 24)},
-    {"JUNO ORGAN", {1, 0, 60, 0, 90, 0, 0, 3}, {0, 0, 127, 10}, 0, 0, FX(0, 0, 0, 14)},
-    {"JUNO HOOVER", {1, 90, 60, 0, 60, 20, 30, 3}, {10, 60, 100, 40}, 0, 1, FX(0, 0, 0, 16), XP(P_LD_SHP + 1, 90, P_LRATE + 1, 70)},
-    /* MAIN MENU: the 106's chorus I+II drenching a held chord -- CHORD on at 9TH so one key plays the real
-     * voicing (the reference: "chords drenched in this sound define a lot of deep house"). */
-    {"JUNO 9TH", {1, 55, 45, 0, 42, 18, 30, 3}, {70, 85, 95, 85}, 0, 0, FX(0, 0, 8, 28), XP(P_CHORD + 1, 3)},
-    /* MAIN MENU: dub techno chord stab -- a simple triad (CHORD at 1), filtered down and snapped short so the
-     * delay/reverb tail (not the patch) carries the sound, per the reference's "build the chord, then spend
-     * most of your time on the delay and reverb chain". */
-    {"DUB STAB", {0, 0, 30, 0, 32, 15, 55, 2}, {0, 30, 10, 14}, 0, 0, FX(0, 10, 70, 58), XP(P_CHORD + 1, 1)},
-    /* MAIN MENU: deep house organ chord -- CHOR I+II for the Leslie-ish spin, a slow LFO>RATE wobble on top, held
-     * in 7th chords (CHORD at 2). No filter envelope: an organ's cutoff doesn't move. */
-    {"DEEP ORGAN", {1, 0, 55, 0, 85, 0, 0, 3}, {0, 0, 120, 14}, 0, 0, FX(0, 0, 4, 18), XP(P_CHORD + 1, 2, P_LRATE + 1, 14)},
-    /* MAIN MENU: Jupiter-8-style strings/brass -- saw+pulse, slow attack, drenched in chorus, 9th chords for the
-     * "expensive" wide/glassy sound on slower, emotional progressions. */
-    {"JUP STRINGS", {2, 45, 0, 0, 65, 15, 20, 3}, {55, 70, 110, 70}, 0, 0, FX(0, 0, 10, 34), XP(P_CHORD + 1, 3)},
-    /* MAIN MENU: chord-capable brass stab -- short, loud, stabbing, a plain triad (CHORD at 1) for a big-room
-     * house/garage hit. */
-    {"BRASS STAB", {0, 0, 0, 0, 40, 25, 75, 1}, {0, 45, 20, 20}, 0, 0, FX(0, 0, 8, 10), XP(P_CHORD + 1, 1)},
-    /* MAIN MENU: basses, appended at the end (see the note on eng_prism.c's appended block). */
-    /* Moog-style sub bass -- pure sine-ish sub (big SUB, no PW/NOISE), a slow filter, the foundation for
-     * jazzy deep house. */
-    {"MOOG SUB", {0, 0, 110, 0, 15, 5, 20, 0}, {0, 70, 100, 20}, 0, 1, FX(0, 0, 0, 0)},
-    /* Roland SH-101 bass -- square + sub, a snappy envelope, the Detroit techno/electro staple. */
-    {"SH101 BASS", {1, 0, 80, 0, 30, 10, 70, 0}, {0, 25, 30, 10}, 0, 1, FX(0, 0, 0, 0)},
-    /* Moog Taurus-style pedal bass -- slow, heavy, cinematic; suits darker dubby tracks. */
-    {"TAURUS PDL", {0, 0, 120, 0, 12, 8, 30, 0}, {30, 90, 110, 60}, 0, 1, FX(0, 0, 0, 0)},
-    /* Oberheim Matrix-1000 bass -- fat analog saw with a little grit (DCO's own drive, no SUB). */
-    {"MATRIX BASS", {0, 0, 60, 10, 28, 30, 55, 0}, {0, 30, 60, 15}, 0, 1, FX(0, 0, 0, 0)},
-    /* 808-style sub bass -- a long sine sub tuned to the key, essential for electro/Miami bass. */
-    {"808 SUB", {0, 0, 127, 0, 10, 0, 10, 0}, {0, 0, 127, 40}, 0, 1, FX(0, 0, 0, 0)},
-    /* electro bass stab (Drexciya/Aux 88) -- short, dry square, a fast filter envelope snap. */
-    {"ELECTRO BASS", {1, 0, 0, 0, 35, 20, 90, 0}, {0, 15, 0, 10}, 0, 1, FX(0, 0, 0, 0)},
-    /* leads and arps, appended at the end (see the note above). */
-    /* Minimoog/Model D lead -- warm, fat, mono, with portamento (glide). */
-    {"MINIMOOG LD", {0, 0, 0, 0, 55, 20, 60, 0}, {0, 50, 100, 25}, 0, 1, FX(0, 0, 10, 14), XP(P_GLIDE + 1, 30)},
-    /* Juno-106 pulse lead -- PWM'd and lightly chorused, simple and clean. */
-    {"JUNO PULSE", {1, 50, 0, 0, 40, 20, 30, 1}, {0, 30, 90, 15}, 0, 1, FX(0, 0, 10, 10), XP(P_LD_SHP + 1, 40, P_LRATE + 1, 25)},
-    /* Roland SH-101 lead -- sharp and thin, a fast LFO vibrato, the electro/early-techno staple. */
-    {"SH101 LEAD", {1, 20, 0, 0, 55, 40, 65, 0}, {0, 20, 100, 12}, 0, 1, FX(0, 0, 8, 8), XP(P_LD_SHP + 1, 60, P_LRATE + 1, 55)},
-    /* Prophet-5 lead -- smooth, polysynth-y (S+P wave), chorused; Cybotron-era Detroit electro. */
-    {"PROPHET LD", {2, 45, 0, 0, 45, 30, 60, 1}, {0, 55, 95, 30}, 0, 1, FX(0, 0, 12, 16), XP(P_GLIDE + 1, 16)},
-    /* square-wave "Clear" melody (Cybotron/Juan Atkins) -- plain pulse, no chorus, no glide: robotic and dry. */
-    {"CLEAR MELODY", {1, 0, 0, 0, 20, 10, 50, 0}, {0, 10, 110, 10}, 0, 1, FX(0, 0, 6, 6)},
-    /* Drexciya-style bubbly arpeggio -- fast UP arp over a simple analog mono voice. */
-    {"DREX ARP", {1, 35, 0, 0, 50, 20, 55, 0}, {0, 15, 90, 10}, 0, 1, FX(0, 0, 14, 16), ARP(1, 100, 1, 70)},
-    /* Juno/Jupiter arp -- a slower, filtered arpeggio that gradually opens up (a longer attack on the
-     * filter envelope). */
-    {"JUP ARP", {0, 0, 0, 0, 60, 15, 70, 2}, {25, 60, 100, 30}, 0, 1, FX(0, 0, 16, 20), ARP(1, 40, 1, 70)},
-    /* pads and a texture, appended at the end (see the note above). */
-    /* JV-1080 "Pad Warm" -- the classic 90s ROMpler pad, soft and a little lo-fi, saw+pulse with a slow
-     * attack and light chorus. */
-    {"PAD WARM", {2, 50, 20, 0, 40, 15, 20, 1}, {75, 85, 105, 85}, 0, 0, FX(0, 0, 10, 36)},
-    /* sci-fi bleep/blip -- a short synth chirp (SH-101/MS-20/Casio style accent) for electro. */
-    {"SCIFI BLIP", {1, 0, 0, 20, 70, 50, 100, 0}, {0, 8, 0, 6}, 0, 1, FX(0, 0, 16, 10)},
+    /* Rhodes Juno Sketch reference, CHORDS bank (juno-tagged entries) */
+    {"DEEP HOUSE", {0, 64, 44, 0, 48, 44, 57, 1}, {0, 16, 32, 16}, 0, 0, FX(0, 0, 23, 23)},
+    {"MIN9 STAB", {2, 64, 25, 0, 51, 38, 51, 1}, {0, 18, 25, 18}, 0, 0, FX(0, 0, 23, 25), XP(P_CHORD + 1, 3)},
+    {"DUB CHORD", {2, 64, 25, 0, 44, 38, 57, 1}, {0, 14, 13, 18}, 0, 0, FX(0, 0, 50, 27)},
+    {"CHORUS STAB", {2, 64, 0, 0, 57, 25, 57, 3}, {0, 14, 19, 14}, 0, 0, FX(0, 0, 18, 23)},
+    {"FILTER STAB", {0, 64, 38, 0, 25, 57, 108, 1}, {0, 13, 6, 14}, 0, 0, FX(0, 0, 23, 18)},
+    {"DETROIT STAB", {2, 64, 51, 0, 53, 64, 76, 2}, {0, 10, 13, 14}, 0, 0, FX(0, 0, 32, 18)},
+    {"ORGAN STAB", {1, 64, 76, 0, 79, 13, 19, 1}, {0, 9, 108, 7}, 0, 0, FX(0, 0, 18, 18)},
+    {"SOFT STAB", {1, 64, 25, 0, 38, 13, 38, 3}, {0, 23, 25, 23}, 0, 0, FX(0, 0, 18, 32)},
+    {"ACID CHORD", {0, 64, 0, 0, 32, 102, 89, 0}, {0, 11, 6, 11}, 0, 0, FX(0, 0, 27, 14)},
+    {"ANALOG KEYS", {2, 44, 25, 0, 51, 19, 57, 1}, {0, 50, 25, 27}, 0, 0, FX(0, 0, 9, 23)},
+    {"GLASS PLUCK", {1, 23, 0, 0, 44, 70, 70, 1}, {0, 20, 0, 32}, 0, 0, FX(0, 0, 32, 32)},
+    {"DUSTY KEYS", {2, 53, 32, 4, 38, 13, 44, 1}, {0, 41, 38, 27}, 0, 0, FX(0, 0, 18, 27)},
+    /* PADS bank (all juno-tagged) */
+    {"LUSH CHORDS", {2, 64, 32, 0, 64, 25, 32, 3}, {1, 54, 95, 41}, 0, 0, FX(0, 0, 14, 32)},
+    {"WARM PAD", {2, 64, 38, 0, 51, 19, 19, 3}, {30, 90, 114, 63}, 0, 0, FX(0, 0, 14, 41)},
+    {"DARK PAD", {2, 64, 38, 0, 19, 38, 76, 1}, {125, 127, 114, 63}, 0, 0, FX(0, 0, 14, 45)},
+    {"NIGHT PAD", {0, 64, 38, 0, 44, 25, 25, 1}, {40, 90, 108, 54}, 0, 0, FX(0, 0, 27, 41)},
+    {"PWM STRINGS", {1, 64, 0, 0, 70, 13, 13, 2}, {18, 68, 108, 50}, 0, 0, FX(0, 0, 9, 36)},
+    {"90S STRINGS", {2, 64, 0, 0, 64, 13, 13, 3}, {20, 68, 114, 54}, 0, 0, FX(0, 0, 9, 41)},
+    {"STRING MCH", {2, 64, 0, 0, 70, 6, 6, 3}, {13, 90, 121, 50}, 0, 0, FX(0, 0, 9, 36)},
+    {"CHOIR PAD", {1, 64, 0, 5, 41, 38, 13, 3}, {40, 90, 114, 72}, 0, 0, FX(0, 0, 14, 50)},
+    {"AIR PAD", {1, 64, 0, 38, 70, 19, 13, 2}, {50, 90, 114, 72}, 0, 0, FX(0, 0, 18, 54)},
+    /* BASS bank (juno-tagged entries) */
+    {"JUNO BASS", {1, 64, 89, 0, 38, 32, 51, 0}, {0, 18, 64, 7}, 0, 1, FX(0, 0, 0, 3)},
+    {"PLUCK BASS", {0, 64, 64, 0, 41, 57, 70, 0}, {0, 11, 19, 7}, 0, 1, FX(0, 0, 7, 5)},
+    {"HOLLOW BASS", {1, 38, 0, 0, 36, 38, 44, 0}, {0, 23, 76, 7}, 0, 1, FX(0, 0, 0, 3)},
+    {"SUB BASS", {1, 64, 127, 0, 28, 19, 25, 0}, {0, 23, 102, 9}, 0, 1, FX(0, 0, 0, 5)},
+    /* LEADS bank (juno-tagged entries) */
+    {"SQUARE LEAD", {1, 64, 0, 0, 70, 25, 25, 1}, {0, 27, 102, 14}, 0, 1, FX(0, 0, 27, 23)},
+    {"SAW LEAD", {2, 64, 25, 0, 76, 38, 38, 2}, {0, 27, 102, 14}, 0, 1, FX(0, 0, 27, 23)},
+    {"SOFT LEAD", {0, 64, 25, 0, 64, 38, 32, 1}, {2, 36, 102, 23}, 0, 1, FX(0, 0, 27, 27)},
+    {"MUTE TRUMPET", {2, 64, 0, 0, 44, 44, 64, 0}, {2, 23, 95, 11}, 0, 1, FX(0, 0, 23, 27), XP(P_GLIDE + 1, 18)},
+    {"JUNO BRASS", {0, 64, 25, 0, 38, 25, 83, 1}, {3, 27, 76, 23}, 0, 0, FX(0, 0, 7, 20)},
+    {"SOFT BRASS", {0, 64, 0, 0, 36, 19, 57, 1}, {6, 45, 89, 23}, 0, 0, FX(0, 0, 11, 27)},
+    /* FX bank (juno-tagged entries) */
+    {"NOISE SWEEP", {2, 64, 0, 44, 32, 70, 70, 2}, {60, 113, 89, 68}, 0, 0, FX(0, 0, 23, 45)},
 };
 
 static const engine_t ENG_JUNO = {

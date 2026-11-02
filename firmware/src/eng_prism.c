@@ -203,127 +203,54 @@ static void prism_render(track_t *t, voice_t *v, int32_t *out, uint32_t n, const
 
 static const preset_t PRISM_PRESETS[] = {
     /* name, {MODEL, HARM, TIMB, MRPH, ENV, SUB, -, -}, {A D S R}, fenv, mono */
-    {"FOLD LEAD", {0, 64, 46, 64, 60, 0, 0, 0}, {0, 70, 90, 34}, 0, 1, FX(0, 8, 18, 14), XP(P_GLIDE + 1, 24)},
-    {"FOLD BASS", {0, 64, 30, 40, 84, 60, 0, 0}, {0, 58, 40, 20}, 0, 1, FX(0, 0, 0, 0), XP(P_TRANS + 1, -24)},
-    {"WEST PLUCK", {0, 20, 20, 64, 110, 0, 0, 0}, {0, 52, 0, 40}, 0, 0, FX(0, 0, 24, 22)},
-    {"GLASS FOLD", {0, 110, 58, 90, 30, 0, 0, 0}, {40, 90, 110, 80}, 0, 0, FX(0, 40, 18, 46)},
-    {"BUCHLA BELL", {0, 127, 84, 20, 70, 0, 0, 0}, {0, 84, 0, 70}, 0, 0, FX(0, 10, 26, 40)},
-    {"FOLD DRONE", {0, 0, 70, 110, 0, 40, 0, 0}, {70, 90, 127, 90}, 0, 0, FX(0, 30, 20, 50), XP(P_LRATE + 1, 20, P_LD_FLT + 1, 30)},
-    /* SWARM (ENV at 0: the grains' rate is the knob's) */
-    {"SUPER SWARM", {1, 36, 56, 100, 0, 0, 0, 0}, {4, 80, 115, 50}, 0, 0, FX(0, 20, 14, 30)},
-    {"SWARM PAD", {1, 52, 44, 90, 0, 0, 0, 0}, {70, 90, 120, 90}, 0, 0, FX(0, 30, 20, 55)},
-    {"GLISS CLOUD", {1, 84, 60, 70, 0, 0, 0, 0}, {40, 90, 120, 80}, 0, 0, FX(0, 0, 30, 50)},
-    {"GRAIN RAIN", {1, 70, 96, 20, 0, 0, 0, 0}, {10, 90, 120, 70}, 0, 0, FX(0, 0, 34, 46)},
-    {"SWARM BASS", {1, 24, 50, 110, 0, 50, 0, 0}, {0, 70, 100, 30}, 0, 1, FX(0, 0, 0, 6), XP(P_TRANS + 1, -24)},
-    /* WAVE */
-    {"TABLE SWEEP", {2, 20, 40, 64, 30, 0, 0, 0}, {50, 90, 118, 80}, 0, 0, FX(0, 30, 18, 46), XP(P_LRATE + 1, 24, P_LD_FLT + 1, 40)},
-    {"TABLE BASS", {2, 0, 30, 20, 70, 40, 0, 0}, {0, 62, 60, 22}, 0, 1, FX(0, 0, 0, 4), XP(P_TRANS + 1, -24)},
-    {"DIGI KEYS", {2, 50, 60, 30, 60, 0, 0, 0}, {0, 78, 30, 50}, 0, 0, FX(0, 20, 16, 30)},
-    {"VOX TABLE", {2, 90, 50, 80, 20, 0, 0, 0}, {60, 90, 118, 84}, 0, 0, FX(0, 40, 16, 52)},
-    {"TABLE LEAD", {2, 64, 80, 50, 40, 0, 0, 0}, {0, 70, 100, 30}, 0, 1, FX(0, 10, 22, 20), XP(P_GLIDE + 1, 28)},
-    /* HARM */
-    {"GLASS ORGAN", {3, 30, 30, 70, 20, 0, 0, 0}, {4, 80, 120, 40}, 0, 0, FX(0, 30, 10, 36)},
-    {"OVERTONES", {3, 0, 20, 96, 100, 0, 0, 0}, {30, 96, 60, 80}, 0, 0, FX(0, 0, 26, 50)},
-    {"SPECTRAL PD", {3, 70, 50, 60, 0, 0, 0, 0}, {70, 90, 120, 90}, 0, 0, FX(0, 36, 20, 56), XP(P_LRATE + 1, 18, P_LD_FLT + 1, 36)},
-    {"ADD BELL", {3, 96, 70, 80, 60, 0, 0, 0}, {0, 88, 0, 76}, 0, 0, FX(0, 0, 24, 44)},
-    /* CHORD (HARM: 6 OCT, 17 5TH, 28 SUS4, 40 M, 51 M7, 62 M9, 74 M11, 85 6/9, 96 MAJ9, 108 MAJ7, 119 MAJ; ENV at 0:
-     * TIMB is the inversion) */
-    {"STRING MCH", {4, 108, 30, 30, 0, 0, 0, 0}, {40, 90, 118, 70}, 0, 0, FX(0, 50, 10, 40)},
-    {"SOLINA MIN", {4, 51, 40, 20, 0, 0, 0, 0}, {50, 90, 118, 76}, 0, 0, FX(0, 60, 14, 46)},
-    {"ORGAN CHRD", {4, 119, 20, 90, 0, 0, 0, 0}, {2, 80, 120, 30}, 0, 0, FX(0, 20, 0, 24)},
+    /* Rhodes Juno Sketch reference, KEYS bank: tine/reed/cp/fm/m1piano -> FM(8)/VA(5)/WAVE(2); mallet -> MODAL(17) */
+    {"MK I STAGE", {8, 60, 35, 45, 65, 0, 0, 0}, {0, 38, 55, 28}, 0, 0, FX(0, 15, 10, 22)},
+    {"SUITCASE", {8, 45, 28, 50, 55, 0, 0, 0}, {0, 45, 65, 35}, 0, 0, FX(0, 12, 12, 28)},
+    {"MK II BRIGHT", {8, 80, 48, 40, 75, 0, 0, 0}, {0, 30, 45, 22}, 0, 0, FX(0, 18, 8, 18)},
+    {"PHASER TINE", {8, 60, 40, 45, 65, 0, 0, 0}, {0, 35, 55, 28}, 0, 0, FX(0, 45, 14, 24)},
+    {"DYNO GLASS", {8, 95, 55, 30, 80, 0, 0, 0}, {0, 25, 30, 20}, 0, 0, FX(0, 10, 16, 20)},
+    {"BARK DRIVE", {8, 110, 60, 35, 85, 0, 0, 0}, {0, 20, 30, 16}, 0, 0, FX(30, 10, 10, 18)},
+    {"LOFI TINE", {8, 35, 25, 55, 45, 0, 0, 0}, {0, 50, 60, 30}, 0, 0, FX(0, 8, 20, 30)},
+    {"WURLI 200A", {8, 50, 65, 40, 50, 0, 0, 0}, {0, 40, 60, 30}, 0, 0, FX(0, 10, 10, 24)},
+    {"WURLI GROWL", {8, 65, 85, 35, 55, 0, 0, 0}, {0, 35, 55, 26}, 0, 0, FX(10, 10, 10, 20)},
+    {"MUTED WURLI", {8, 30, 45, 50, 40, 0, 0, 0}, {0, 45, 65, 35}, 0, 0, FX(0, 8, 14, 30)},
+    {"PIANET", {8, 55, 50, 25, 60, 0, 0, 0}, {0, 18, 15, 16}, 0, 0, FX(0, 8, 8, 18)},
+    {"CP-70 GRAND", {5, 55, 45, 60, 70, 0, 0, 0}, {0, 30, 80, 22}, 0, 0, FX(0, 15, 12, 30)},
+    {"CP CHORUS", {5, 60, 50, 60, 70, 0, 0, 0}, {0, 30, 80, 22}, 0, 0, FX(0, 55, 14, 32)},
+    {"M1 PIANO", {2, 40, 50, 35, 55, 0, 0, 0}, {0, 40, 40, 22}, 0, 0, FX(0, 20, 12, 22)},
+    {"DARK PIANO", {2, 20, 35, 30, 40, 0, 0, 0}, {0, 55, 50, 30}, 0, 0, FX(0, 15, 16, 30)},
+    {"DX E.PIANO", {8, 70, 45, 45, 60, 0, 0, 0}, {0, 35, 50, 26}, 0, 0, FX(0, 16, 12, 24)},
+    {"GLASS BELL", {17, 100, 65, 80, 0, 0, 0, 0}, {0, 0, 127, 55}, 0, 0, FX(0, 10, 20, 40)},
+    {"VIBES", {17, 60, 45, 60, 0, 0, 0, 0}, {0, 0, 127, 70}, 0, 0, FX(0, 15, 18, 45)},
+    /* CHORDS bank: non-juno (tine/m1piano) chord stabs */
     {"HOUSE STAB", {4, 62, 45, 10, 0, 0, 0, 0}, {0, 62, 0, 40}, 0, 0, FX(0, 10, 26, 26)},
-    {"RAVE 5TH", {4, 17, 30, 0, 0, 0, 0, 0}, {0, 66, 30, 30}, 0, 0, FX(20, 0, 22, 20)},
-    {"DREAM 69", {4, 85, 60, 110, 0, 0, 0, 0}, {70, 90, 120, 90}, 0, 0, FX(0, 30, 24, 56), XP(P_LRATE + 1, 14, P_LD_FLT + 1, 24)},
-    /* (2026-10-20) Plaits' own models: 5 VA, 6 VCF, 7 PHDIS, 8 FM, 9..11 6OP A B C, 12 GRAIN, 13 TERRN, 14 STRMC,
-     * 15 CHIP, 16 STRNG, 17 MODAL, 18 NOISE, 19 SPECH, 20 PARTC, 21 KICK, 22 SNARE, 23 HIHAT. The ones with their
-     * own decay (6OP, STRNG, MODAL, the drums) hold SUS at 127 and ENV at 0 */
-    {"VA SAW LEAD", {5, 40, 20, 100, 30, 0, 0, 0}, {0, 70, 100, 30}, 0, 1, FX(0, 10, 22, 16), XP(P_GLIDE + 1, 26)},
-    {"VA PULSE PAD", {5, 70, 64, 30, 0, 0, 0, 0}, {70, 90, 118, 84}, 0, 0, FX(0, 40, 18, 50), XP(P_LRATE + 1, 20, P_LD_SHP + 1, 30)},
-    {"VCF BASS", {6, 40, 40, 30, 80, 40, 0, 0}, {0, 60, 50, 20}, 0, 1, FX(0, 0, 0, 4), XP(P_TRANS + 1, -24)},
-    {"VCF SWEEP", {6, 90, 30, 70, 50, 0, 0, 0}, {40, 100, 100, 80}, 0, 0, FX(0, 20, 20, 44), XP(P_LRATE + 1, 16, P_LD_FLT + 1, 40)},
-    {"PD KEYS", {7, 30, 60, 40, 70, 0, 0, 0}, {0, 76, 40, 50}, 0, 0, FX(0, 20, 16, 30)},
-    {"PD RESO", {7, 90, 80, 90, 60, 0, 0, 0}, {0, 70, 80, 40}, 0, 1, FX(0, 0, 20, 20), XP(P_GLIDE + 1, 20)},
-    {"FM BELL", {8, 100, 70, 20, 80, 0, 0, 0}, {0, 90, 0, 80}, 0, 0, FX(0, 10, 24, 46)},
-    {"FM BASS", {8, 40, 50, 60, 90, 30, 0, 0}, {0, 60, 40, 20}, 0, 1, FX(0, 0, 0, 4), XP(P_TRANS + 1, -12)},
-    {"DX BANK A", {9, 0, 64, 64, 0, 0, 0, 0}, {0, 0, 127, 50}, 0, 0, FX(0, 10, 14, 30)},
-    {"DX BANK B", {10, 0, 64, 64, 0, 0, 0, 0}, {0, 0, 127, 50}, 0, 0, FX(0, 10, 14, 30)},
-    {"DX BANK C", {11, 0, 64, 64, 0, 0, 0, 0}, {0, 0, 127, 50}, 0, 0, FX(0, 10, 14, 30)},
-    {"FORMANT VOX", {12, 50, 60, 40, 30, 0, 0, 0}, {20, 80, 110, 60}, 0, 0, FX(0, 30, 16, 40), XP(P_LRATE + 1, 18, P_LD_FLT + 1, 30)},
-    {"GRAIN BUZZ", {12, 100, 40, 90, 60, 0, 0, 0}, {0, 70, 90, 30}, 0, 1, FX(10, 0, 20, 16)},
-    {"TERRAIN", {13, 30, 50, 50, 40, 0, 0, 0}, {0, 70, 100, 40}, 0, 1, FX(0, 10, 20, 20), XP(P_LRATE + 1, 24, P_LD_SHP + 1, 40)},
-    {"TERRAIN PAD", {13, 90, 60, 80, 0, 0, 0, 0}, {70, 90, 118, 90}, 0, 0, FX(0, 40, 20, 56), XP(P_LRATE + 1, 12, P_LD_FLT + 1, 30)},
-    {"STR MACHINE", {14, 50, 60, 40, 0, 0, 0, 0}, {50, 90, 118, 80}, 0, 1, FX(0, 30, 10, 46)},
-    {"POLY STRING", {14, 100, 80, 80, 0, 0, 0, 0}, {40, 90, 118, 84}, 0, 1, FX(0, 40, 14, 50)},
-    {"CHIP LEAD", {15, 0, 30, 40, 0, 0, 0, 0}, {0, 70, 100, 20}, 0, 1, FX(0, 0, 24, 10), XP(P_GLIDE + 1, 10)},
-    {"CHIP ARP", {15, 70, 60, 50, 0, 0, 0, 0}, {0, 70, 100, 30}, 0, 1, FX(0, 0, 26, 14)},
-    {"KS GUITAR", {16, 20, 60, 70, 0, 0, 0, 0}, {0, 0, 127, 60}, 0, 1, FX(0, 0, 18, 30)},
-    {"KS HARP", {16, 60, 80, 100, 0, 0, 0, 0}, {0, 0, 127, 80}, 0, 1, FX(0, 20, 20, 50)},
-    {"MODAL BELL", {17, 90, 70, 90, 0, 0, 0, 0}, {0, 0, 127, 80}, 0, 0, FX(0, 0, 22, 50)},
-    {"MODAL WOOD", {17, 10, 40, 40, 0, 0, 0, 0}, {0, 0, 127, 40}, 0, 0, FX(0, 0, 16, 26)},
-    {"NOISE SWEEP", {18, 50, 70, 90, 60, 0, 0, 0}, {30, 90, 100, 70}, 0, 0, FX(0, 20, 24, 44), XP(P_LRATE + 1, 14, P_LD_FLT + 1, 50)},
-    {"NOISE TONE", {18, 110, 50, 110, 30, 0, 0, 0}, {0, 70, 90, 40}, 0, 1, FX(0, 0, 20, 30)},
-    {"SPEECH", {19, 20, 50, 50, 0, 0, 0, 0}, {0, 70, 110, 30}, 0, 1, FX(0, 0, 14, 20)},
-    {"ROBOT WORDS", {19, 110, 40, 30, 0, 0, 0, 0}, {0, 70, 110, 30}, 0, 1, FX(0, 0, 18, 16)},
-    {"PARTICLES", {20, 60, 70, 60, 0, 0, 0, 0}, {0, 0, 127, 70}, 0, 1, FX(0, 0, 20, 40)},
-    {"DROPLETS", {20, 20, 40, 100, 0, 0, 0, 0}, {0, 0, 127, 80}, 0, 1, FX(0, 0, 24, 50)},
-    {"PL KICK", {21, 50, 50, 60, 0, 0, 0, 0}, {0, 0, 127, 30}, 0, 0, FX(0, 0, 0, 6), XP(P_TRANS + 1, -24)},
-    {"PL SNARE", {22, 60, 60, 50, 0, 0, 0, 0}, {0, 0, 127, 30}, 0, 0, FX(0, 0, 0, 10)},
-    {"PL HIHAT", {23, 50, 70, 40, 0, 0, 0, 0}, {0, 0, 127, 20}, 0, 0, FX(0, 0, 0, 8)},
-    /* MAIN MENU: added after the factory bank so every existing preset keeps its index (preset_trim.h,
-     * golden.txt and cpu_baseline.txt are all indexed by position) -- new sounds append here, never inline. */
-    /* Korg M1 "house piano" stab -- bright, slightly plastic, PCM-wavetable character; voiced as a 7th-chord
-     * stab so it reads jazzy, not just a single bell hit. */
-    {"M1 PIANO", {2, 30, 45, 40, 55, 0, 0, 0}, {0, 45, 0, 24}, 0, 0, FX(0, 20, 12, 22), XP(P_CHORD + 1, 2)},
-    /* Roland D-50 "Fantasia"/"Staccato Heart" digital shimmer -- bright wavetable sweep, cold and airy, a 9th
-     * chord for slower pads/progressions. */
-    {"D50 FANTASIA", {2, 70, 55, 75, 25, 0, 0, 0}, {45, 85, 115, 75}, 0, 0, FX(0, 30, 16, 42), XP(P_CHORD + 1, 3)},
-    /* Detroit string stab (Strings of Life) -- bright digital ensemble, short release, rhythmic and punchy,
-     * a 7th chord. */
-    {"DETROIT STAB", {3, 20, 35, 65, 85, 0, 0, 0}, {0, 35, 0, 20}, 0, 0, FX(0, 30, 14, 24), XP(P_CHORD + 1, 2)},
-    /* chopped soul/jazz sample-chord feel -- narrow, slightly noisy spectral harmonics standing in for an old
-     * record chop, a 7th chord (no sampler: memory limits ruled that out). */
-    {"CHOP CHORD", {3, 10, 60, 30, 50, 0, 0, 0}, {0, 50, 20, 30}, 0, 0, FX(0, 10, 30, 36), XP(P_CHORD + 1, 2)},
-    /* Robin S "Show Me Love" organ -- root-and-fifth (HARM 17), held at the organ end of MRPH, close inversion
-     * (low TIMB) so it stays hollow and punchy, almost no filter movement. Tagged BK_BASS: it's played as the
-     * bass/ostinato, not a stacked chord -- the fifth is baked into the patch, not CHORD mode. */
-    {"SHOWMELOVE", {4, 17, 20, 88, 0, 0, 0, 0}, {0, 50, 85, 20}, 0, 0, FX(0, 8, 8, 20)},
-    /* a DX-style FM electric piano (2-op: HARM the partial ratio, TIMB the mod index -- the classic EP "bark"
-     * on attack that settles as ENV closes TIMB back down). CHORD on at 9TH: one key plays the dusty minor-9th
-     * voicing the reference calls for, the module stacking the real scale intervals (not baked in). */
-    {"DX EP 9TH", {8, 68, 42, 50, 68, 0, 0, 0}, {0, 42, 68, 32}, 0, 0, FX(0, 18, 14, 26), XP(P_CHORD + 1, 3)},
-    /* a staccato FM EP stab into a dotted delay -- same voice family as DX EP 9TH, shorter and drier so the
-     * delay (not the patch) does the staccato bounce; a 7th chord, not the 9th. */
     {"RHODES STAB", {8, 65, 38, 45, 60, 0, 0, 0}, {0, 25, 20, 20}, 0, 0, FX(0, 15, 55, 30), XP(P_CHORD + 1, 2)},
-    /* a warm, soft jazz-house electric piano (Wurli/Rhodes 7th & 9th chords, lots of room reverb) -- lower FM
-     * ratio and mod index than DX EP 9TH so it stays round, not clangy. */
-    {"JAZZY EP", {8, 45, 30, 55, 50, 0, 0, 0}, {10, 55, 70, 60}, 0, 0, FX(0, 10, 10, 55), XP(P_CHORD + 1, 3)},
-    /* slap/pluck bass (D-50/JV-1080 style) -- a quick, sampled-style transient, common in 90s garage-house. */
-    {"SLAP BASS", {2, 20, 30, 20, 80, 0, 0, 0}, {0, 20, 10, 15}, 0, 1, FX(0, 0, 0, 8)},
-    /* Korg MS-20 lead/sweep -- very resonant and a bit screamy (PRISM's own VCF model), common in
-     * electro/industrial. */
-    {"MS20 LEAD", {6, 95, 70, 40, 70, 0, 0, 0}, {0, 40, 90, 15}, 0, 1, FX(0, 0, 14, 10), XP(P_GLIDE + 1, 10)},
-    /* warm vocoder lead (Korg/Roland vocoder lines) -- the formant model, brighter and more mono-lead voiced
-     * than FORMANT VOX's pad setting. */
-    {"VOCODER LD", {12, 70, 70, 50, 45, 0, 0, 0}, {0, 55, 90, 25}, 0, 1, FX(0, 20, 14, 30)},
-    /* Korg M1 "Universe" -- a huge, evolving, slightly cheesy pad (the SWARM model, wide spread). */
-    {"M1 UNIVERSE", {1, 90, 70, 100, 0, 0, 0, 0}, {80, 95, 125, 100}, 0, 0, FX(0, 40, 24, 60)},
-    /* Ensoniq VFX/SQ-80 and Wavestation pads -- moving wavetable textures, futuristic and a bit eerie. */
-    {"WAVESTATION", {2, 60, 70, 90, 0, 0, 0, 0}, {65, 90, 118, 90}, 0, 0, FX(0, 30, 22, 54), XP(P_LRATE + 1, 16, P_LD_FLT + 1, 26)},
-    /* vowel/choir pad -- the formant model voiced as a held "ahh" chord (9th) for emotional moments;
-     * FORMANT VOX stays the plainer single-note version of the same model. */
-    {"CHOIR PAD", {12, 40, 55, 70, 20, 0, 0, 0}, {60, 90, 118, 90}, 0, 0, FX(0, 30, 18, 50), XP(P_CHORD + 1, 3)},
-    /* vinyl crackle/tape hiss -- a steady noise texture layer for dusty chord progressions. */
-    {"VINYL HISS", {18, 10, 20, 60, 0, 0, 0, 0}, {30, 100, 127, 60}, 0, 0, FX(0, 0, 0, 20)},
-    /* noise riser -- a long rising filter sweep for transitions (longer and slower than NOISE SWEEP). */
+    {"PIANO STAB", {2, 35, 40, 30, 60, 0, 0, 0}, {0, 30, 10, 20}, 0, 0, FX(0, 18, 16, 24), XP(P_CHORD + 1, 2)},
+    /* BASS bank: non-juno (fmbass -> FM(8) mono low register; organ bass -> CHORD(4) low register) */
+    {"LATELY BASS", {8, 55, 60, 30, 70, 30, 0, 0}, {0, 30, 40, 15}, 0, 1, FX(0, 0, 0, 4), XP(P_TRANS + 1, -12)},
+    {"SOLID BASS", {8, 40, 45, 35, 65, 40, 0, 0}, {0, 25, 45, 14}, 0, 1, FX(0, 0, 0, 3), XP(P_TRANS + 1, -12)},
+    {"ROUND BASS", {8, 30, 35, 40, 55, 45, 0, 0}, {0, 35, 55, 18}, 0, 1, FX(0, 0, 0, 4), XP(P_TRANS + 1, -12)},
+    {"SLAP BASS", {8, 60, 55, 25, 75, 35, 0, 0}, {0, 15, 20, 10}, 0, 1, FX(0, 0, 0, 4), XP(P_TRANS + 1, -12)},
+    {"FRETLESS", {8, 25, 30, 45, 50, 50, 0, 0}, {0, 40, 60, 20}, 0, 1, FX(0, 0, 0, 6), XP(P_GLIDE + 1, 25, P_TRANS + 1, -12)},
+    {"DEEP SUB", {8, 15, 20, 50, 40, 70, 0, 0}, {0, 50, 90, 25}, 0, 1, FX(0, 0, 0, 3), XP(P_TRANS + 1, -24)},
+    {"DUB SUB", {8, 20, 25, 48, 42, 65, 0, 0}, {0, 55, 95, 30}, 0, 1, FX(0, 0, 5, 10), XP(P_TRANS + 1, -24)},
+    {"ORGAN BASS", {4, 6, 10, 70, 0, 0, 0, 0}, {0, 20, 110, 15}, 0, 1, FX(0, 0, 0, 6), XP(P_TRANS + 1, -12)},
+    /* ORGAN bank: drawbar-style organs, all Plaits CHORD model (HARM = chord quality, MRPH = organ-end timbre) */
+    {"M1 ORGAN 2", {4, 119, 30, 75, 10, 0, 0, 0}, {0, 10, 120, 14}, 0, 0, FX(0, 15, 6, 20)},
+    {"JAZZ ORGAN", {4, 51, 40, 65, 8, 0, 0, 0}, {0, 12, 118, 18}, 0, 0, FX(0, 18, 8, 24)},
+    {"GOSPEL ORGAN", {4, 62, 35, 70, 12, 0, 0, 0}, {0, 10, 120, 20}, 0, 0, FX(0, 20, 10, 40)},
+    {"CLICK ORGAN", {4, 40, 25, 60, 45, 0, 0, 0}, {0, 6, 108, 10}, 0, 0, FX(0, 10, 4, 14)},
+    {"PERC ORGAN", {4, 28, 20, 55, 35, 0, 0, 0}, {0, 8, 70, 12}, 0, 0, FX(0, 8, 6, 16)},
+    {"DEEP ORGAN", {4, 6, 15, 65, 6, 0, 0, 0}, {0, 14, 120, 22}, 0, 0, FX(0, 10, 8, 28)},
+    /* FX bank: non-juno sfx-tagged entries, NOISE model (18) */
     {"RISER", {18, 80, 30, 100, 110, 0, 0, 0}, {127, 60, 0, 10}, 0, 1, FX(0, 0, 10, 30)},
-    /* rain/room-tone atmosphere -- a low, filtered noise drone for dub techno depth. */
-    {"RAIN AMBNT", {18, 30, 55, 30, 30, 0, 0, 0}, {80, 100, 127, 100}, 0, 0, FX(0, 10, 20, 50)},
-    /* "echoing delay throw" -- a short simple chord (triad) meant to be caught by a long delay/reverb tail,
-     * then muted; a performance patch more than a sustained sound. */
-    {"STAB THROW", {4, 40, 20, 0, 0, 0, 0, 0}, {0, 20, 0, 10}, 0, 0, FX(0, 0, 90, 80)},
-    /* sampled vocal chop stand-in -- the speech model, pitched short and choppy (no sampler: memory limits
-     * ruled that out). ROBOT WORDS already covers the vocoded one-liner side of this. */
-    {"VOCAL CHOP", {19, 60, 40, 40, 0, 0, 0, 0}, {0, 15, 0, 15}, 0, 1, FX(0, 0, 10, 14)},
+    {"DOWNLIFTER", {18, 70, 60, 90, 90, 0, 0, 0}, {0, 110, 0, 30}, 0, 1, FX(0, 0, 14, 30)},
+    {"IMPACT", {18, 40, 80, 40, 20, 0, 0, 0}, {0, 8, 0, 25}, 0, 0, FX(10, 0, 20, 45)},
+    {"LASER ZAP", {18, 100, 30, 100, 15, 0, 0, 0}, {0, 10, 0, 8}, 0, 1, FX(0, 0, 8, 10)},
+    {"BLEEP", {18, 20, 20, 30, 80, 0, 0, 0}, {0, 8, 0, 6}, 0, 1, FX(0, 0, 16, 10)},
+    {"DUB SIREN", {18, 60, 50, 70, 60, 0, 0, 0}, {20, 80, 100, 50}, 0, 0, FX(0, 10, 40, 50), XP(P_LRATE + 1, 30, P_LD_FLT + 1, 40)},
+    {"VINYL CRKL", {18, 10, 20, 60, 0, 0, 0, 0}, {30, 100, 127, 60}, 0, 0, FX(0, 0, 0, 20)},
+    {"WIND", {18, 15, 45, 25, 20, 0, 0, 0}, {60, 100, 127, 80}, 0, 0, FX(0, 0, 0, 30)},
 };
 
 /* CHORD: its three controls by what they do there */
