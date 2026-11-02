@@ -89,6 +89,9 @@ static const preset_t ACID_PRESETS[] = {
     {"TB DEEP", {0, 20, 60, 40, 80, 60, 0, 30}, {0, 0, 127, 8}, 0, 1, FX(0, 0, 0, 6), XP(P_TRANS + 1, -12)},
     {"TB SQUELCH", {0, 30, 120, 110, 30, 110, 30, 15}, {0, 0, 127, 6}, 0, 1, FX(0, 0, 14, 10)},
     {"TB RUBBER", {1, 30, 70, 60, 90, 70, 20, 40}, {0, 0, 127, 8}, 0, 1, FX(0, 0, 8, 8)},
+    /* MAIN MENU: Roland MC-202 bass -- thicker and more raw than a 303: less resonance, more drive, a
+     * firmer accent. Appended at the end (see eng_prism.c's note). */
+    {"MC202", {1, 55, 75, 60, 55, 75, 60, 25}, {0, 0, 127, 8}, 0, 1, FX(0, 0, 8, 8)},
 };
 
 static const engine_t ENG_ACID = {

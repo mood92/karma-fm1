@@ -111,6 +111,20 @@ static const preset_t JUNO_PRESETS[] = {
     /* MAIN MENU: chord-capable brass stab -- short, loud, stabbing, a plain triad (CHORD at 1) for a big-room
      * house/garage hit. */
     {"BRASS STAB", {0, 0, 0, 0, 40, 25, 75, 1}, {0, 45, 20, 20}, 0, 0, FX(0, 0, 8, 10), XP(P_CHORD + 1, 1)},
+    /* MAIN MENU: basses, appended at the end (see the note on eng_prism.c's appended block). */
+    /* Moog-style sub bass -- pure sine-ish sub (big SUB, no PW/NOISE), a slow filter, the foundation for
+     * jazzy deep house. */
+    {"MOOG SUB", {0, 0, 110, 0, 15, 5, 20, 0}, {0, 70, 100, 20}, 0, 1, FX(0, 0, 0, 0)},
+    /* Roland SH-101 bass -- square + sub, a snappy envelope, the Detroit techno/electro staple. */
+    {"SH101 BASS", {1, 0, 80, 0, 30, 10, 70, 0}, {0, 25, 30, 10}, 0, 1, FX(0, 0, 0, 0)},
+    /* Moog Taurus-style pedal bass -- slow, heavy, cinematic; suits darker dubby tracks. */
+    {"TAURUS PDL", {0, 0, 120, 0, 12, 8, 30, 0}, {30, 90, 110, 60}, 0, 1, FX(0, 0, 0, 0)},
+    /* Oberheim Matrix-1000 bass -- fat analog saw with a little grit (DCO's own drive, no SUB). */
+    {"MATRIX BASS", {0, 0, 60, 10, 28, 30, 55, 0}, {0, 30, 60, 15}, 0, 1, FX(0, 0, 0, 0)},
+    /* 808-style sub bass -- a long sine sub tuned to the key, essential for electro/Miami bass. */
+    {"808 SUB", {0, 0, 127, 0, 10, 0, 10, 0}, {0, 0, 127, 40}, 0, 1, FX(0, 0, 0, 0)},
+    /* electro bass stab (Drexciya/Aux 88) -- short, dry square, a fast filter envelope snap. */
+    {"ELECTRO BASS", {1, 0, 0, 0, 35, 20, 90, 0}, {0, 15, 0, 10}, 0, 1, FX(0, 0, 0, 0)},
 };
 
 static const engine_t ENG_JUNO = {
