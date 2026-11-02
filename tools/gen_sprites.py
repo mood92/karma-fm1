@@ -167,6 +167,83 @@ def bassist(lean):
     return p.im
 
 
+def racecar(lean):
+    """Lane 1 (bass): a 90s arcade race car in side view, low and wide, a big wing, speed lines. lean: the nose up (a wheelie)."""
+    p = Pic()
+    t = -6 if lean else 0                                                   # the nose's rise
+    for i, y in enumerate((52, 62, 72, 82)):                                # speed lines behind it
+        p.line([(4 + i * 5, y), (22 + i * 3, y)], DIM, 2)
+    p.poly([(26, 60), (30, 46), (44, 40), (58, 30 + t // 2), (78, 30 + t // 2), (90, 44 + t), (106, 52 + t), (108, 64 + t),
+            (104, 76), (26, 76)], COL, INK)                                 # the body
+    p.poly([(60, 34 + t // 2), (76, 34 + t // 2), (86, 46 + t), (58, 46)], BLACK, INK)   # the canopy
+    p.ell(68, 40, 5, 4, SKIN, INK, 1)                                       # the driver's head in it
+    p.d.rectangle((12, 34, 40, 38), fill=COL, outline=INK)                  # the wing, its posts
+    p.d.rectangle((10, 30, 16, 40), fill=COL, outline=INK)
+    p.line([(24, 38), (28, 58)], INK, 2)
+    p.line([(36, 38), (34, 58)], INK, 2)
+    p.d.rectangle((58, 56, 98 + t, 62), fill=BLACK, outline=INK)            # a stripe with the number
+    p.dot(66, 59, 1.5, WHITE)
+    p.line([(63, 59), (63, 59)], WHITE)
+    for x in (40, 90):                                                      # wheels
+        yy = 80 + (t if x > 60 else 0)
+        p.ell(x, yy, 14, 14, BLACK, INK, 2)
+        p.ell(x, yy, 5, 5, DIM, INK, 1)
+        p.line([(x - 10, yy), (x + 10, yy)], DIM, 1)
+        p.line([(x, yy - 10), (x, yy + 10)], DIM, 1)
+    p.dot(104, 58 + t, 2, WHITE)                                            # a headlight
+    return p.im
+
+
+def cabinet(up):
+    """Lane 2 (keys): an arcade cabinet that grins: a marquee, a screen with a pixel face, a panel with a stick and
+    buttons, a coin door. up: the face shouts (mouth open), the buttons lit."""
+    p = Pic()
+    cx = 56
+    p.poly([(cx - 32, 100), (cx - 32, 20), (cx - 24, 4), (cx + 24, 4), (cx + 32, 20), (cx + 32, 100)], BLACK, COL)   # the body
+    p.d.rectangle((cx - 26, 8, cx + 26, 18), fill=COL, outline=INK)         # the marquee
+    for i in range(5):
+        p.dot(cx - 18 + i * 9, 13, 1.5, WHITE if (i + up) % 2 else BLACK)
+    p.d.rectangle((cx - 24, 22, cx + 24, 62), fill=BLACK, outline=INK)      # the screen
+    for gx in range(-20, 22, 8):                                            # a faint grid
+        p.line([(cx + gx, 24), (cx + gx, 60)], DIM, 1)
+    p.d.rectangle((cx - 14, 32, cx - 8, 40), fill=WHITE)                    # eyes
+    p.d.rectangle((cx + 8, 32, cx + 14, 40), fill=WHITE)
+    p.d.rectangle((cx - 12, 36, cx - 10, 40), fill=BLACK)
+    p.d.rectangle((cx + 10, 36, cx + 12, 40), fill=BLACK)
+    if up:
+        p.d.rectangle((cx - 8, 46, cx + 8, 56), fill=WHITE)                 # a shout
+    else:
+        p.d.rectangle((cx - 10, 48, cx - 8, 50), fill=WHITE)                # a grin of pixels
+        p.d.rectangle((cx - 8, 50, cx + 8, 52), fill=WHITE)
+        p.d.rectangle((cx + 8, 48, cx + 10, 50), fill=WHITE)
+    p.poly([(cx - 30, 70), (cx + 30, 70), (cx + 34, 80), (cx - 34, 80)], DIM, INK)   # the control panel
+    p.line([(cx - 16, 74), (cx - 16, 66 - (4 if up else 0))], INK, 2)       # the stick
+    p.dot(cx - 16, 65 - (4 if up else 0), 3, COL)
+    for i, c in enumerate((COL, WHITE, ORANGE)):
+        p.dot(cx + 2 + i * 9, 75, 3, c if up else DIM)
+    p.d.rectangle((cx - 12, 86, cx + 12, 98), fill=BLACK, outline=INK)      # the coin door
+    p.d.rectangle((cx - 2, 90, cx + 2, 94), fill=COL)
+    return p.im
+
+
+def starship():
+    """Lane 3 (everything else): a delta-wing fighter seen from the front-top, 96 x 52: a canopy, swept wings, twin engines.
+    The lights on the wings are the scene's (SAUCER_LIGHTS: where they are)."""
+    p = Pic(96, 52)
+    p.poly([(4, 38), (48, 18), (92, 38), (72, 44), (48, 38), (24, 44)], SKIN, INK)      # the wings
+    p.poly([(40, 36), (48, 2), (56, 36), (48, 44)], BLACK, COL)                         # the fuselage
+    p.d.chord((42, 8, 54, 32), 180, 360, fill=WHITE, outline=INK)                       # the canopy
+    p.dot(48, 16, 1.5, BLACK)
+    for x in (20, 76):                                                                   # the engines
+        p.d.rectangle((x - 4, 34, x + 4, 46), fill=BLACK, outline=INK)
+        p.dot(x, 47, 2.5, ORANGE)
+    p.line([(4, 38), (2, 30)], COL, 2)                                                   # wing tips
+    p.line([(92, 38), (94, 30)], COL, 2)
+    for x, y in SAUCER_LIGHTS:
+        p.dot(x, y, 2.5, BLACK)
+    return p.im
+
+
 def gorilla(up):
     """The gorilla at its congas (the drums are the scene's): a high skull, a heavy brow, a wide muzzle, long
     thick arms. up: the left hand in the air, open; else both hands down on the drums."""
@@ -236,7 +313,7 @@ def saucer():
     return p.im
 
 
-SAUCER_LIGHTS = [(12, 31), (24, 34), (36, 35), (48, 36), (60, 35), (72, 34), (84, 31)]
+SAUCER_LIGHTS = [(14, 37), (24, 35), (36, 31), (48, 30), (60, 31), (72, 35), (82, 37)]
 
 
 def wizard():
@@ -302,8 +379,8 @@ def drummer(mouth):
     return p.im
 
 
-POSES = [("WIZARD", wizard()), ("DRUMMER", drummer(False)), ("DRUMMER_HIT", drummer(True)), ("BUDDHA", bassist(False)), ("BUDDHA_LEAN", bassist(True)), ("GORILLA", gorilla(False)),
-         ("GORILLA_UP", gorilla(True)), ("SAUCER", saucer())]
+POSES = [("WIZARD", wizard()), ("DRUMMER", drummer(False)), ("DRUMMER_HIT", drummer(True)), ("BUDDHA", racecar(False)), ("BUDDHA_LEAN", racecar(True)), ("GORILLA", cabinet(False)),
+         ("GORILLA_UP", cabinet(True)), ("SAUCER", starship())]
 
 
 def small(im, box, w, h):
@@ -398,9 +475,9 @@ def head(face):
 _P = dict(POSES)
 # for the mixer's podiums (about 36 pixels high) and HOME's lanes (16: the heads; the saucer whole). The Buddha and
 # the gorilla are drawn at that size; the saucer and the drummer shrink well
-SMALL = [("BUDDHA_MX", small(_P["BUDDHA"], (8, 4, 104, 104), 40, 36)), ("GORILLA_MX", gorilla_m()),
+SMALL = [("BUDDHA_MX", small(_P["BUDDHA"], (0, 24, 112, 104), 40, 28)), ("GORILLA_MX", small(_P["GORILLA"], (8, 0, 104, 104), 40, 36)),
          ("SAUCER_MX", small(_P["SAUCER"], (0, 0, 96, 52), 40, 22)), ("DRUMMER_MX", small(_P["DRUMMER"], (0, 0, 64, 52), 36, 29)),
-         ("BUDDHA_HM", small(_P["BUDDHA"], (36, 4, 76, 44), 18, 16)), ("GORILLA_HM", head(gorilla_face)),
+         ("BUDDHA_HM", small(_P["BUDDHA"], (24, 24, 112, 80), 18, 12)), ("GORILLA_HM", small(_P["GORILLA"], (24, 0, 88, 62), 18, 16)),
          ("SAUCER_HM", small(_P["SAUCER"], (0, 0, 96, 52), 22, 12)), ("DRUMMER_HM", small(_P["DRUMMER"], (10, 0, 54, 30), 22, 15))]
 POSES += SMALL
 
