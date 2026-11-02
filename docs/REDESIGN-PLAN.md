@@ -47,27 +47,23 @@ trims on top of KARMA's native page-cycling UI. This plan is the actual rebuild.
   them.
 - The drum track and HEX drum synth UI (already hidden from navigation this session; this
   phase can go further and drop the engine/pages outright).
-- Punch-in effects — see open question 3 below on exactly what this means.
+- INSERT / INSERT 2 ("punch-in" effects) only — the DIST/CHORUS/DELAY/REVERB sends stay (Juno
+  chorus, delay and reverb were explicitly asked for).
 
-## Open questions (need your call before I start cutting code)
+## Decided (Nov 1 2026)
 
-1. **Arpeggiator (ARP, ARP 2 pages)** — keep or cut? Not mentioned in the mockup or your
-   notes either way.
-2. **Scale/chord page (SEL, SEL 2: root, scale, quantize, chord, transpose, strum,
-   voice-leading)** — keep or cut? This is what keeps notes in-key and voices chords while you
-   play live, so it might be worth keeping even in a stripped-down instrument.
-3. **"Punch-in effects"** — do you mean the INSERT / INSERT 2 pages specifically (a
-   switchable effect you punch in live), or the whole FX family including the DIST/CHORUS/
-   DELAY/REVERB sends? You did ask for Juno chorus, delay and reverb specifically, so my
-   assumption is: keep those, cut INSERT. Confirm?
-4. **Sub-style tags** — "deep house," "jazzy house," "sub bass," "stand-up bass," etc. don't
-   exist anywhere in the current preset data; only the broad kind (BASS, LEAD, ...) does.
-   Tagging all ~150 factory presets by sub-style by hand is a lot of guessing on my part. Two
-   options: (a) I tag them as best I can from the sound/name and you correct the ones that are
-   wrong once you can hear them in BROWSE, or (b) we cut the factory list down to a smaller,
-   curated set you actually want, each one tagged properly from the start. Which do you want?
+1. **Arpeggiator** — keep, as one of SOUND's sub-pages.
+2. **Scale/chord page** — keep. Also: Hayden plans to run this same firmware on the SMK-37
+   Elite (same chip, has pads), and wants a future **chord-capture mode**: hold a chord on the
+   keys, it's captured, then assigned to one of the SMK-37's pads for one-tap chord playback
+   (the kind of chord/scale-assist some newer Ableton-adjacent keyboards do). This is an SMK-37
+   phase feature, not part of this FM-1 BROWSE rebuild — noted here so it isn't lost, revisit
+   once SMK-37 work starts.
+3. **"Punch-in effects"** = INSERT / INSERT 2 pages specifically. Confirmed, see above.
+4. **Preset tagging** — I tag all ~150 factory presets by sub-style as best I can from the
+   name/sound; Hayden corrects the wrong ones once he can hear them in BROWSE.
 
-## Rough phase order (once the above is answered)
+## Rough phase order
 
 1. Strip what's being removed (sequencer, punch FX, drum UI) — mechanical, and shrinks the
    page table before the navigation rework so there's less to carry through it.
