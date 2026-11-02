@@ -95,6 +95,22 @@ static const preset_t JUNO_PRESETS[] = {
     {"JUNO SWEEP", {0, 0, 40, 10, 10, 100, 110, 2}, {70, 110, 60, 80}, 0, 0, FX(0, 0, 10, 24)},
     {"JUNO ORGAN", {1, 0, 60, 0, 90, 0, 0, 3}, {0, 0, 127, 10}, 0, 0, FX(0, 0, 0, 14)},
     {"JUNO HOOVER", {1, 90, 60, 0, 60, 20, 30, 3}, {10, 60, 100, 40}, 0, 1, FX(0, 0, 0, 16), XP(P_LD_SHP + 1, 90, P_LRATE + 1, 70)},
+    /* MAIN MENU: the 106's chorus I+II drenching a held chord -- CHORD on at 9TH so one key plays the real
+     * voicing (the reference: "chords drenched in this sound define a lot of deep house"). */
+    {"JUNO 9TH", {1, 55, 45, 0, 42, 18, 30, 3}, {70, 85, 95, 85}, 0, 0, FX(0, 0, 8, 28), XP(P_CHORD + 1, 3)},
+    /* MAIN MENU: dub techno chord stab -- a simple triad (CHORD at 1), filtered down and snapped short so the
+     * delay/reverb tail (not the patch) carries the sound, per the reference's "build the chord, then spend
+     * most of your time on the delay and reverb chain". */
+    {"DUB STAB", {0, 0, 30, 0, 32, 15, 55, 2}, {0, 30, 10, 14}, 0, 0, FX(0, 10, 70, 58), XP(P_CHORD + 1, 1)},
+    /* MAIN MENU: deep house organ chord -- CHOR I+II for the Leslie-ish spin, a slow LFO>RATE wobble on top, held
+     * in 7th chords (CHORD at 2). No filter envelope: an organ's cutoff doesn't move. */
+    {"DEEP ORGAN", {1, 0, 55, 0, 85, 0, 0, 3}, {0, 0, 120, 14}, 0, 0, FX(0, 0, 4, 18), XP(P_CHORD + 1, 2, P_LRATE + 1, 14)},
+    /* MAIN MENU: Jupiter-8-style strings/brass -- saw+pulse, slow attack, drenched in chorus, 9th chords for the
+     * "expensive" wide/glassy sound on slower, emotional progressions. */
+    {"JUP STRINGS", {2, 45, 0, 0, 65, 15, 20, 3}, {55, 70, 110, 70}, 0, 0, FX(0, 0, 10, 34), XP(P_CHORD + 1, 3)},
+    /* MAIN MENU: chord-capable brass stab -- short, loud, stabbing, a plain triad (CHORD at 1) for a big-room
+     * house/garage hit. */
+    {"BRASS STAB", {0, 0, 0, 0, 40, 25, 75, 1}, {0, 45, 20, 20}, 0, 0, FX(0, 0, 8, 10), XP(P_CHORD + 1, 1)},
 };
 
 static const engine_t ENG_JUNO = {

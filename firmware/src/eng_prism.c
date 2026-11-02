@@ -269,6 +269,34 @@ static const preset_t PRISM_PRESETS[] = {
     {"PL KICK", {21, 50, 50, 60, 0, 0, 0, 0}, {0, 0, 127, 30}, 0, 0, FX(0, 0, 0, 6), XP(P_TRANS + 1, -24)},
     {"PL SNARE", {22, 60, 60, 50, 0, 0, 0, 0}, {0, 0, 127, 30}, 0, 0, FX(0, 0, 0, 10)},
     {"PL HIHAT", {23, 50, 70, 40, 0, 0, 0, 0}, {0, 0, 127, 20}, 0, 0, FX(0, 0, 0, 8)},
+    /* MAIN MENU: added after the factory bank so every existing preset keeps its index (preset_trim.h,
+     * golden.txt and cpu_baseline.txt are all indexed by position) -- new sounds append here, never inline. */
+    /* Korg M1 "house piano" stab -- bright, slightly plastic, PCM-wavetable character; voiced as a 7th-chord
+     * stab so it reads jazzy, not just a single bell hit. */
+    {"M1 PIANO", {2, 30, 45, 40, 55, 0, 0, 0}, {0, 45, 0, 24}, 0, 0, FX(0, 20, 12, 22), XP(P_CHORD + 1, 2)},
+    /* Roland D-50 "Fantasia"/"Staccato Heart" digital shimmer -- bright wavetable sweep, cold and airy, a 9th
+     * chord for slower pads/progressions. */
+    {"D50 FANTASIA", {2, 70, 55, 75, 25, 0, 0, 0}, {45, 85, 115, 75}, 0, 0, FX(0, 30, 16, 42), XP(P_CHORD + 1, 3)},
+    /* Detroit string stab (Strings of Life) -- bright digital ensemble, short release, rhythmic and punchy,
+     * a 7th chord. */
+    {"DETROIT STAB", {3, 20, 35, 65, 85, 0, 0, 0}, {0, 35, 0, 20}, 0, 0, FX(0, 30, 14, 24), XP(P_CHORD + 1, 2)},
+    /* chopped soul/jazz sample-chord feel -- narrow, slightly noisy spectral harmonics standing in for an old
+     * record chop, a 7th chord (no sampler: memory limits ruled that out). */
+    {"CHOP CHORD", {3, 10, 60, 30, 50, 0, 0, 0}, {0, 50, 20, 30}, 0, 0, FX(0, 10, 30, 36), XP(P_CHORD + 1, 2)},
+    /* Robin S "Show Me Love" organ -- root-and-fifth (HARM 17), held at the organ end of MRPH, close inversion
+     * (low TIMB) so it stays hollow and punchy, almost no filter movement. Tagged BK_BASS: it's played as the
+     * bass/ostinato, not a stacked chord -- the fifth is baked into the patch, not CHORD mode. */
+    {"SHOWMELOVE", {4, 17, 20, 88, 0, 0, 0, 0}, {0, 50, 85, 20}, 0, 0, FX(0, 8, 8, 20)},
+    /* a DX-style FM electric piano (2-op: HARM the partial ratio, TIMB the mod index -- the classic EP "bark"
+     * on attack that settles as ENV closes TIMB back down). CHORD on at 9TH: one key plays the dusty minor-9th
+     * voicing the reference calls for, the module stacking the real scale intervals (not baked in). */
+    {"DX EP 9TH", {8, 68, 42, 50, 68, 0, 0, 0}, {0, 42, 68, 32}, 0, 0, FX(0, 18, 14, 26), XP(P_CHORD + 1, 3)},
+    /* a staccato FM EP stab into a dotted delay -- same voice family as DX EP 9TH, shorter and drier so the
+     * delay (not the patch) does the staccato bounce; a 7th chord, not the 9th. */
+    {"RHODES STAB", {8, 65, 38, 45, 60, 0, 0, 0}, {0, 25, 20, 20}, 0, 0, FX(0, 15, 55, 30), XP(P_CHORD + 1, 2)},
+    /* a warm, soft jazz-house electric piano (Wurli/Rhodes 7th & 9th chords, lots of room reverb) -- lower FM
+     * ratio and mod index than DX EP 9TH so it stays round, not clangy. */
+    {"JAZZY EP", {8, 45, 30, 55, 50, 0, 0, 0}, {10, 55, 70, 60}, 0, 0, FX(0, 10, 10, 55), XP(P_CHORD + 1, 3)},
 };
 
 /* CHORD: its three controls by what they do there */
