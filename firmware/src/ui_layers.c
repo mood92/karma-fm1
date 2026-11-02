@@ -1009,9 +1009,19 @@ static void layer_screen_draw(void)
             tl[i].fg = cur ? C_BLACK : C_WHITE;
             tl[i].top = cur ? 0 : TE_DIM[i / 4u];
         }
-        if (live_slot < SETLIST_N) {
-            setlist_name(live_slot, nm);
-            te_lower(sub, nm, sizeof sub);
+        if (live_store) {
+            str_cpy(sub, "store: pick a slot", sizeof sub);
+        } else if (live_slot < SETLIST_N) {
+            char hd[8] = {'L', (char)('1' + sel), ' ', 0, 0, 0, 0, 0};
+            fmt_int(hd + 3, (int32_t)live_slot + 1);
+            str_cpy(sub, hd, sizeof sub);
+            {
+                uint32_t n = str_len(sub);
+                sub[n] = ' ';
+                sub[n + 1u] = 0;
+                setlist_name(live_slot, nm);
+                te_lower(sub + n + 1u, nm, (uint32_t)sizeof sub - n - 1u);
+            }
         } else {
             str_cpy(sub, "pick a slot", sizeof sub);
         }
