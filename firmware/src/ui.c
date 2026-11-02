@@ -603,44 +603,76 @@ static const char *preset_kind(uint32_t n) { uint32_t x = preset_list_idx(n); re
 
 /* MAIN MENU: PRESETS category tabs (ALL, then BK_BASS..BK_FX). ui.browse_kind: 0 = ALL, 1..8 = BK_* + 1
  * (so the zero-initialized default at boot is ALL with no separate init needed). Factory sounds only --
- * a tab narrows what's browsable, user presets still show up under ALL (same as the unfiltered list did). */
+ * a tab narrows what's browsable, user presets still show up under ALL (same as the unfiltered list did).
+ * 2026-11-02: one global list across every engine, not just the selected lane's -- a sound's engine lives
+ * on one particular lane (eng_allowed: ACID/JUNO on lane 1, ELEMENTS on lane 2, PRISM on lane 3, a fixed
+ * memory-arena split, not a UI choice), so picking a sound whose engine isn't the current lane's jumps the
+ * lane for you (browse_go), the same way LIVE SETLIST recall already jumps lanes for its slots. */
 #define BROWSE_TABS (8u + 1u)
 static const char *const BROWSE_TAB_LABEL[BROWSE_TABS] = {"ALL", "BASS", "KEYS", "ORGN", "PAD", "LEAD", "PLCK",
                                                             "STAB", "FX"};
-static uint32_t browse_count(uint32_t tab)            /* factory BANK entries on TSEL's lane matching this tab */
+static void track_select(uint32_t i);                 /* forward (defined below): browse_go jumps lanes too */
+static uint32_t eng_home_lane(uint32_t e)              /* the one lane that engine's arena fits (eng_allowed) */
+{
+    return e == ENGI_ELEM ? 1u : e == ENGI_PRISM ? 2u : 0u;
+}
+static uint32_t browse_count(uint32_t tab)            /* every factory BANK entry matching this tab, any engine,
+                                                        * + user presets on ALL (tab 0), same as the old list */
 {
     uint32_t i, c = 0;
     if (!bank_ready)
         bank_resolve();
     for (i = 0; i < NBANK; i++)
-        if (eng_allowed(TSEL, BANK[i].e) && bank_pi[i] != 0xFFu && (!tab || BANK[i].kind == tab - 1u))
+        if (bank_pi[i] != 0xFFu && (!tab || BANK[i].kind == tab - 1u))
             c++;
+    if (!tab)
+        c += up_count();
     return c;
 }
-static uint32_t browse_entry(uint32_t n, uint32_t tab)   /* the n-th BANK index matching this tab, 0xFFFFu if none */
+/* the n-th match: a BANK index (< NBANK), or NBANK + a user preset slot (ALL only), 0xFFFFu if none */
+static uint32_t browse_entry(uint32_t n, uint32_t tab)
 {
     uint32_t i, c = 0;
     if (!bank_ready)
         bank_resolve();
     for (i = 0; i < NBANK; i++)
-        if (eng_allowed(TSEL, BANK[i].e) && bank_pi[i] != 0xFFu && (!tab || BANK[i].kind == tab - 1u)) {
+        if (bank_pi[i] != 0xFFu && (!tab || BANK[i].kind == tab - 1u)) {
             if (c == n)
                 return i;
             c++;
         }
+    if (!tab)
+        for (i = 0; i < up_count(); i++)
+            if (c++ == n)
+                return NBANK + up_nth(i);
     return 0xFFFFu;
 }
-static void browse_go(uint32_t n)                     /* load the n-th sound of the current tab onto TSEL */
+static void browse_go(uint32_t n)                     /* load the n-th sound of the current tab, any lane */
 {
     uint32_t i = browse_entry(n, ui.browse_kind);
+    uint32_t e, k;
     char nm[13];
     if (is_drum(TSEL) || i == 0xFFFFu)
         return;
-    if (BANK[i].e != TSEL->eng_req)
-        select_engine(BANK[i].e);
-    apply_preset(bank_pi[i]);
+    if (i >= NBANK) {                                 /* a user preset */
+        k = i - NBANK;
+        e = up_engine(k);
+        if (e == NENGINES)
+            return;
+        if (!eng_allowed(TSEL, e))
+            track_select(eng_home_lane(e));
+        if (up_load_to(TSEL, k))
+            return;
+        up_name(k, nm);
+    } else {                                          /* a factory BANK entry */
+        if (!eng_allowed(TSEL, BANK[i].e))             /* this sound's engine lives on a different lane */
+            track_select(eng_home_lane(BANK[i].e));
+        if (BANK[i].e != TSEL->eng_req)
+            select_engine(BANK[i].e);
+        apply_preset(bank_pi[i]);
+        str_cpy(nm, BANK[i].name, sizeof nm);
+    }
     ui.force = 1;
-    str_cpy(nm, BANK[i].name, sizeof nm);
     knob_say(1u, "SOUND", nm);
 }
 

@@ -419,46 +419,28 @@ static uint32_t graph_signature(void)
     }
     return h;
 }
-/* preset browser: the list by kind (ui.c BANK), the current one in white */
+/* preset browser: the global list by kind (ui.c BANK, across every lane's engines), the current one in
+ * white. MAIN MENU: every tab, ALL included, is this same global list (browse_count/browse_entry) --
+ * selecting a sound whose engine lives on another lane jumps there (browse_go). */
 static void graph_browse(void)
 {
-    uint32_t tab = ui.browse_kind, total, cur, e, k;
+    uint32_t tab = ui.browse_kind, total = browse_count(tab), cur;
     int32_t row;
-    if (tab) {                       /* MAIN MENU: a category tab (not ALL) -- factory sounds of that kind only */
-        total = browse_count(tab);
-        if (!total)
-            return;
-        cur = ui.browse_pos % total;
-        for (row = -3; row <= 3; row++) {
-            int32_t y = 4 + (row + 3) * 17;
-            char tag[5], nm[13];
-            int sel = row == 0;
-            uint32_t n = (cur + total * 4u + (uint32_t)row) % total;
-            uint32_t i = browse_entry(n, tab);
-            str_cpy(tag, BANK_KIND[BANK[i].kind], sizeof tag);
-            str_cpy(nm, BANK[i].name, sizeof nm);
-            if (sel)
-                cv_rect(4, y + 6, 3, 3, C_WHITE);
-            cv_text(14, y, &FONT_S, tag, sel ? C_GRAY : C_DIM);
-            cv_text(54, y, &FONT_S, nm, sel ? C_WHITE : C_GRAY);
-        }
-        return;
-    }
-    cur = preset_pos(&total);
     if (!total)
         return;
+    cur = ui.browse_pos % total;
     for (row = -3; row <= 3; row++) {
         int32_t y = 4 + (row + 3) * 17;
         char tag[5], nm[13];
         int sel = row == 0;
         uint32_t n = (cur + total * 4u + (uint32_t)row) % total;
-        e = preset_at(n, &k);
-        if (e == NENGINES) {                             /* user preset: "U07" and its name */
-            up_slot_label(tag, k);
-            up_name(k, nm);
-        } else {                                         /* its kind: BASS, KEYS, PAD... */
-            str_cpy(tag, preset_kind(n), sizeof tag);
-            str_cpy(nm, ENGINES[e]->presets[k].name, sizeof nm);
+        uint32_t i = browse_entry(n, tab);
+        if (i >= NBANK) {                                /* user preset: "U07" and its name */
+            up_slot_label(tag, i - NBANK);
+            up_name(i - NBANK, nm);
+        } else {
+            str_cpy(tag, BANK_KIND[BANK[i].kind], sizeof tag);
+            str_cpy(nm, BANK[i].name, sizeof nm);
         }
         if (sel)
             cv_rect(4, y + 6, 3, 3, C_WHITE);
@@ -933,12 +915,8 @@ static void draw_columns_set(void)
     if (cur_page()->graph == GR_BROWSE) {
         uint32_t total, cur;
         char u[8];
-        if (ui.browse_kind) {                             /* MAIN MENU: a category tab -- its own filtered count */
-            total = browse_count(ui.browse_kind);
-            cur = total ? ui.browse_pos % total : 0u;
-        } else {
-            cur = preset_pos(&total);
-        }
+        total = browse_count(ui.browse_kind);              /* MAIN MENU: the global list, every tab (ALL too) */
+        cur = total ? ui.browse_pos % total : 0u;
         fmt_int(val, (int32_t)cur + 1);
         str_cpy(u, "/", 8);
         fmt_int(u + 1, (int32_t)total);

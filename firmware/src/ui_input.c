@@ -418,24 +418,18 @@ static void edit_param(uint32_t slot, int32_t steps)
     }
     if (pg->graph == GR_BROWSE) {                         /* MAIN MENU: KNOB 1 scrolls the list, KNOB 2 the category
                                                             * tab (ALL, then BK_BASS..BK_FX) */
-        if (slot == 0u && !is_drum(TSEL)) {
-            if (ui.browse_kind) {
-                uint32_t total = browse_count(ui.browse_kind);
-                if (total) {
-                    ui.browse_pos = (uint32_t)(((int32_t)ui.browse_pos + steps % (int32_t)total + (int32_t)total) %
-                                                (int32_t)total);
-                    browse_go(ui.browse_pos);
-                }
-            } else {
-                uint32_t total, cur = preset_pos(&total);
-                if (total)
-                    preset_go((uint32_t)(((int32_t)cur + steps % (int32_t)total + (int32_t)total) % (int32_t)total));
+        if (slot == 0u && !is_drum(TSEL)) {               /* MAIN MENU: one global list, every tab (ALL included) */
+            uint32_t total = browse_count(ui.browse_kind);
+            if (total) {
+                ui.browse_pos = (uint32_t)(((int32_t)ui.browse_pos + steps % (int32_t)total + (int32_t)total) %
+                                            (int32_t)total);
+                browse_go(ui.browse_pos);
             }
         } else if (slot == 1u && !is_drum(TSEL)) {
             ui.browse_kind = (uint8_t)(((int32_t)ui.browse_kind + steps % (int32_t)BROWSE_TABS + (int32_t)BROWSE_TABS) %
                                         (int32_t)BROWSE_TABS);
             ui.browse_pos = 0;
-            if (ui.browse_kind && browse_count(ui.browse_kind))
+            if (browse_count(ui.browse_kind))              /* ALL included: jump to this tab's first sound too */
                 browse_go(0);
         }
         return;
@@ -1144,7 +1138,8 @@ static void ui_input(void)
          * this to that tab's own sounds; HOME and TRACKS always browse the full list regardless of the tab */
         if (is_drum(TSEL)) {
             TDRUM->p[P_E0] = (int16_t)clamp(TDRUM->p[P_E0] + s, 0, DRUM_KITS - 1);
-        } else if (cur_page()->graph == GR_BROWSE && ui.browse_kind) {
+        } else if (cur_page()->graph == GR_BROWSE) {      /* MAIN MENU: the PRESETS page itself is the global
+                                                            * list, every tab including ALL (see browse_go) */
             uint32_t total = browse_count(ui.browse_kind);
             if (total) {
                 ui.browse_pos = (uint32_t)(((int32_t)ui.browse_pos + s % (int32_t)total + (int32_t)total) %
