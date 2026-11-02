@@ -127,6 +127,46 @@ def buddha(lean):
     return p.im
 
 
+def bassist(lean):
+    """The bass player (lane 1): a round head in a cap and shades, a big grin, a bass slung across the body, its long neck
+    up to the left. lean: he leans into it (the body to the right, one knee up)."""
+    p = Pic()
+    dx = 6 if lean else 0
+    cx = 56 + dx
+    # the legs and the shoes
+    p.tube([(cx - 10, 78), (cx - 14 - (6 if lean else 0), 92), (cx - 16, 98)], 11, SKIN)
+    p.tube([(cx + 10, 78), (cx + 14, 92), (cx + 16, 98)], 11, SKIN)
+    p.ell(cx - 18, 100, 10, 4, SKIN)
+    p.ell(cx + 18, 100, 10, 4, SKIN)
+    # the body: a jacket in the lane's colour
+    p.blob([(cx, 56, 22, 14), (cx, 68, 20, 14)], BLACK, COL, 2)
+    p.line([(cx, 45), (cx, 80)], COL, 2)
+    # the head
+    hx = cx + (3 if lean else 0)
+    p.ell(hx - 17, 27, 3, 5, SKIN)
+    p.ell(hx + 17, 27, 3, 5, SKIN)
+    p.ell(hx, 25, 16, 16, SKIN)
+    p.d.chord((hx - 17, 6, hx + 17, 30), 180, 360, fill=COL, outline=INK)     # the cap
+    p.d.rounded_rectangle((hx + 4, 17, hx + 24, 21), 2, fill=COL, outline=INK)   # its peak
+    p.d.rounded_rectangle((hx - 13, 24, hx + 13, 31), 3, fill=BLACK, outline=INK)  # the shades
+    p.line([(hx, 24), (hx, 25)], INK)
+    p.d.chord((hx - 8, 28, hx + 8, 44), 10, 170, fill=WHITE, outline=INK)     # the grin
+    # the bass: a body low on the right, a long neck up to the left, strings, pickups
+    p.blob([(cx + 12, 66, 16, 11), (cx + 24, 70, 12, 9)], ORANGE, INK, 2)
+    p.tube([(cx + 6, 62), (cx - 28, 36), (cx - 46, 22)], 6, SKIN, INK, 1)     # the neck
+    p.ell(cx - 50, 19, 4, 5, ORANGE, INK, 1)                                  # the head stock
+    p.line([(cx + 12, 66), (cx - 46, 21)], WHITE, 1)
+    p.line([(cx + 14, 68), (cx - 44, 24)], WHITE, 1)
+    p.d.rectangle((cx + 10, 64, cx + 14, 70), fill=BLACK)
+    p.d.rectangle((cx + 18, 66, cx + 22, 72), fill=BLACK)
+    # the arms: the left on the neck, the right plucking
+    p.tube([(cx - 20, 50), (cx - 32, 44), (cx - 32, 37)], 8, SKIN)
+    hand(p, cx - 32, 35, 5)
+    p.tube([(cx + 20, 52), (cx + 28, 62), (cx + 18, 68)], 8, SKIN)
+    hand(p, cx + 16, 69, 5)
+    return p.im
+
+
 def gorilla(up):
     """The gorilla at its congas (the drums are the scene's): a high skull, a heavy brow, a wide muzzle, long
     thick arms. up: the left hand in the air, open; else both hands down on the drums."""
@@ -262,7 +302,7 @@ def drummer(mouth):
     return p.im
 
 
-POSES = [("WIZARD", wizard()), ("DRUMMER", drummer(False)), ("DRUMMER_HIT", drummer(True)), ("BUDDHA", buddha(False)), ("BUDDHA_LEAN", buddha(True)), ("GORILLA", gorilla(False)),
+POSES = [("WIZARD", wizard()), ("DRUMMER", drummer(False)), ("DRUMMER_HIT", drummer(True)), ("BUDDHA", bassist(False)), ("BUDDHA_LEAN", bassist(True)), ("GORILLA", gorilla(False)),
          ("GORILLA_UP", gorilla(True)), ("SAUCER", saucer())]
 
 
@@ -358,9 +398,9 @@ def head(face):
 _P = dict(POSES)
 # for the mixer's podiums (about 36 pixels high) and HOME's lanes (16: the heads; the saucer whole). The Buddha and
 # the gorilla are drawn at that size; the saucer and the drummer shrink well
-SMALL = [("BUDDHA_MX", buddha_m()), ("GORILLA_MX", gorilla_m()),
+SMALL = [("BUDDHA_MX", small(_P["BUDDHA"], (8, 4, 104, 104), 40, 36)), ("GORILLA_MX", gorilla_m()),
          ("SAUCER_MX", small(_P["SAUCER"], (0, 0, 96, 52), 40, 22)), ("DRUMMER_MX", small(_P["DRUMMER"], (0, 0, 64, 52), 36, 29)),
-         ("BUDDHA_HM", head(buddha_face)), ("GORILLA_HM", head(gorilla_face)),
+         ("BUDDHA_HM", small(_P["BUDDHA"], (36, 4, 76, 44), 18, 16)), ("GORILLA_HM", head(gorilla_face)),
          ("SAUCER_HM", small(_P["SAUCER"], (0, 0, 96, 52), 22, 12)), ("DRUMMER_HM", small(_P["DRUMMER"], (10, 0, 54, 30), 22, 15))]
 POSES += SMALL
 
