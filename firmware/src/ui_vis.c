@@ -737,27 +737,29 @@ static int boot_draw(void)
     for (pass = 0; pass < 2u; pass++) {
         cv_begin(240, 120, C_BLACK);
         cv_oy = -(int32_t)(pass * 120u);
-        for (y = 0; y < 7u; y++)
-            for (x = 0; x < 29u; x++) {
-                uint32_t d = ((x * 7u + y * 13u) * 2654435761u >> 26) % 44u, s;   /* (each cell its own moment) */
+        for (y = 0; y < (uint32_t)MM_LOGO_H; y++)               /* the Main Menu mark, each cell its own moment */
+            for (x = 0; x < (uint32_t)MM_LOGO_W; x++) {
+                uint32_t i = y * (uint32_t)MM_LOGO_W + x, v = (MM_LOGO[i >> 1] >> ((i & 1u) * 4u)) & 15u, d, s;
                 uint16_t c;
-                if (!((ROW[y] >> x) & 1u) || t < d)
+                if (!v)
                     continue;
-                s = t - d >= 3u ? 6u : (t - d + 1u) * 2u;
-                c = t - d < 4u ? C_WHITE : COL[x / 6u];
+                d = ((x * 7u + y * 13u) * 2654435761u >> 26) % 44u;
+                if (t < d)
+                    continue;
+                s = t - d >= 3u ? 4u : t - d + 1u;
+                c = t - d < 4u ? C_WHITE : v == 3u ? C_WHITE : COL[(x + y) / 8u % 4u];
                 c = mix565(c, C_BLACK, fade);
-                cv_rect(18 + (int32_t)(x * 7u) + (6 - (int32_t)s) / 2, 76 + (int32_t)(y * 7u) + (6 - (int32_t)s) / 2,
+                cv_rect(80 + (int32_t)(x * 4u) + (4 - (int32_t)s) / 2, 56 + (int32_t)(y * 4u) + (4 - (int32_t)s) / 2,
                         (int32_t)s, (int32_t)s, c);
             }
+        (void)ROW;
         for (x = 0; x < 4u; x++) {                              /* the tracks' bars */
             int32_t w = clamp(((int32_t)t - 50 - (int32_t)x * 4) * 5, 0, 44);
             if (w)
                 cv_rect(26 + (int32_t)x * 48 + (44 - w) / 2, 150, w, 5, mix565(COL[x], C_BLACK, fade));
         }
         if (t >= 72u) {
-            const char *v = FELUCCA_VERSION;
-            if (v[0] == 'K' && v[5] == ' ')
-                v += 6;
+            const char *v = "MAIN MENU  LIVE PLAYER";
             cv_text(120 - text_w(&FONT_S, v) / 2, 172, &FONT_S, v, mix565(RGB(196, 196, 204), C_BLACK, fade));
         }
         cv_oy = 0;
