@@ -542,19 +542,24 @@ static void op_scene_conga(const int32_t ratio[4])
         cv_line(x + sw / 3, y0 + len / 3, x + sw / 3 - 4, y0 + len / 3 + 4, TE_COL[1]);
     }
     op_sprite(upp ? OP_SPR_GORILLA_UP : OP_SPR_GORILLA, 64, 18 - (op_lvl && (op_ph / 160u) & 1u ? 1 : 0), upp && next, TE_COL[1]);
-    for (s = -1; s <= 1; s += 2) {                      /* KNOB 1: the congas, in front of it */
-        int32_t dx = 120 + s * 35, rx = 13 + big, top = 99, mine = (s > 0) == (hand != 0), hot = op_hit > 3u && mine;
-        if (upp && (s > 0) == (next != 0))                                /* (its hand is in the air: the whole head shows) */
-            cv_rect(dx - rx, top - 2, rx * 2 + 1, 5, C_BLACK);
-        cv_rect(dx - rx - 2, top + 1, rx * 2 + 5, 122 - top - 1, C_BLACK);   /* a belly, a narrower foot, two hoops */
-        op_ell(dx, top, rx, 3, hot ? C_WHITE : TE_COL[0]);
-        cv_line(dx - rx, top, dx - rx - 2, top + 9, TE_COL[0]);
-        cv_line(dx - rx - 2, top + 9, dx - rx + 4, 122, TE_COL[0]);
-        cv_line(dx + rx, top, dx + rx + 2, top + 9, TE_COL[0]);
-        cv_line(dx + rx + 2, top + 9, dx + rx - 4, 122, TE_COL[0]);
-        cv_line(dx - rx + 4, 122, dx + rx - 4, 122, TE_COL[0]);
-        cv_line(dx - rx - 1, top + 6, dx + rx + 1, top + 6, TE_COL[0]);
-        cv_line(dx - rx + 2, top + 17, dx + rx - 2, top + 17, TE_COL[0]);
+    {   /* KNOB 1: a keyboard in front of it, wider with the knob; the hand that came down presses a key */
+        int32_t hw = 56 + big * 2, kw = hw * 2 / 14, kx0 = 120 - kw * 7, top = 99, k;
+        cv_rect(kx0 - 2, top, kw * 14 + 5, 122 - top, C_BLACK);
+        cv_rect(kx0 - 2, top, kw * 14 + 5, 2, TE_COL[0]);
+        for (s = -1; s <= 1; s += 2) {
+            int32_t mine = (s > 0) == (hand != 0), pk = (120 + s * 35 - kx0) / kw;
+            if (op_hit > 3u && mine)
+                cv_rect(kx0 + pk * kw + 1, top + 2, kw - 1, 122 - top - 2, C_WHITE);
+        }
+        for (k = 0; k <= 14; k++)
+            cv_line(kx0 + k * kw, top + 2, kx0 + k * kw, 122, TE_COL[0]);
+        for (k = 0; k < 14; k++)
+            if (k % 7 != 2 && k % 7 != 6)
+                cv_rect(kx0 + k * kw + kw * 2 / 3, top + 2, kw * 2 / 3 + 1, 13, TE_G2);
+        cv_line(kx0, 122, kx0 + kw * 14, 122, TE_COL[0]);
+    }
+    for (s = -1; s <= 1; s += 2) {
+        int32_t dx = 120 + s * 35, top = 99, mine = (s > 0) == (hand != 0);
         if (op_hit && mine && ratio[3] > 0) {           /* KNOB 4: the rings */
             int32_t r = 8 + (8 - (int32_t)op_hit) * (2 + ratio[3] * 3 / 1000);
             op_arc(dx + s * 14, top - 2, r, r, s > 0 ? 704 : 512, s > 0 ? 1024 : 832, TE_COL[3]);
@@ -1053,8 +1058,8 @@ static void op_mix_draw(const char *const val[4], const int32_t ratio[4], uint32
         cv_begin(240, 96, C_BLACK);
         cv_rect(0, 94, 240, 1, TE_G1);
         op_k = 2;
-        for (i = 0; i < NTRK; i++) {
-            int32_t cx = 4 + 58 * (int32_t)i + 27, h = 6 + ratio[i] * 46 / 1000, top = 94 - h, y, n = (h - 3) / 4, lit;
+        for (i = 0; i < NPART; i++) {
+            int32_t cx = 4 + 78 * (int32_t)i + 37, h = 6 + ratio[i] * 46 / 1000, top = 94 - h, y, n = (h - 3) / 4, lit;
             int32_t air = hop[i] ? (SINE[(6 - hop[i]) * 85] * 5) >> 15 : 0;
             uint32_t mute = trk[i].p[P_MUTE] != 0;
             uint16_t c = mute ? TE_DIM[i] : TE_COL[i];
@@ -1191,7 +1196,7 @@ static void op_home_body(void)
             cv_blit(0, OP_BODY_Y + 44);
         }
     }
-    for (i = 0; i < NTRK; i++) {                        /* the lanes */
+    for (i = 0; i < NPART; i++) {                       /* the lanes */
         track_t *t = &trk[i];
         uint32_t sel = song.sel == i, len = trk_len(t), pos = t->seq_idx % len, bank = playing ? pos / 16u : 0u;
         uint32_t level = i == TRK_DRUM ? (uint32_t)song.g[G_DRLVL] : (uint32_t)t->p[P_LEVEL], silent = trk_silent(t) || !level;
