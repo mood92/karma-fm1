@@ -131,6 +131,17 @@ static void felucca_init(void)
     song.g[G_DRCH] = midi_set[3], song.g[G_CHOTH] = midi_set[4], song.g[G_BEND] = midi_set[5];   /* settings of the FM-1) */
     layers_init();                            /* the panel's layer buttons for the keys (ui_layers.c) */
     go_home();
+    {                                          /* MAIN MENU: land on the sound list (PRESETS/BROWSE), not the
+                                                * dashboard -- "greeted with a list of sounds" (REDESIGN-PLAN.md) */
+        uint32_t i;
+        for (i = 0; i < NPAGES; i++)
+            if (PAGES[i].graph == GR_BROWSE) {
+                ui.home = 0;
+                ui.page = (uint8_t)i;
+                ui.fam_last[FAM_SAVE] = (uint8_t)i;
+                break;
+            }
+    }
     ui.force = 1;
 }
 
