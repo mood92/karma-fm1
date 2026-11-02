@@ -444,6 +444,8 @@ static void graph_browse(void)
         }
         if (sel)
             cv_rect(4, y + 6, 3, 3, C_WHITE);
+        if (i < NBANK && fav_get(i))                     /* a second dot: this sound is starred */
+            cv_rect(9, y + 6, 3, 3, sel ? C_WHITE : C_HI);
         cv_text(14, y, &FONT_S, tag, sel ? C_GRAY : C_DIM);
         cv_text(54, y, &FONT_S, nm, sel ? C_WHITE : C_GRAY);
     }
@@ -913,16 +915,17 @@ static void draw_columns_set(void)
         return;
     }
     if (cur_page()->graph == GR_BROWSE) {
-        uint32_t total, cur;
+        uint32_t total, cur, i;
         char u[8];
         total = browse_count(ui.browse_kind);              /* MAIN MENU: the global list, every tab (ALL too) */
         cur = total ? ui.browse_pos % total : 0u;
+        i = total ? browse_entry(cur, ui.browse_kind) : 0xFFFFu;
         fmt_int(val, (int32_t)cur + 1);
         str_cpy(u, "/", 8);
         fmt_int(u + 1, (int32_t)total);
         draw_column(0, "No.", val, u, VAL(0u), -1, ICON_NONE);
         draw_column(1, "TAB", BROWSE_TAB_LABEL[ui.browse_kind], "", VAL(1u), -1, ICON_AUTO);
-        draw_column(2, "", "", "", C_HI, -1, ICON_AUTO);
+        draw_column(2, "FAV", i < NBANK && fav_get(i) ? "ON" : "--", "", i < NBANK ? VAL(2u) : C_DIM, -1, ICON_AUTO);
         draw_column(3, "", "", "", C_HI, -1, ICON_AUTO);
         return;
     }

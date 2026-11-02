@@ -457,11 +457,13 @@ static void select_engine(uint32_t e)
     ui.force = 1;
 }
 
-/* the factory presets as one list by kind (basses, keys, organs, pads, leads, plucks and bells, stabs,
- * the rest), then the used user presets: the PRESETS knob and the PRESETS page browse it. By name: an
- * engine's preset table may change order; tests/ui_pages_test.c checks every preset is here once */
-enum { BK_BASS, BK_KEYS, BK_ORGAN, BK_PAD, BK_LEAD, BK_PLUCK, BK_STAB, BK_FX };
-static const char *const BANK_KIND[] = {"BASS", "KEYS", "ORGN", "PAD", "LEAD", "PLCK", "STAB", "FX"};
+/* the factory presets as one list by kind (basses, keys -- plucks and bells folded in, organs, pads,
+ * leads, chords), then the used user presets: the PRESETS knob and the PRESETS page browse it. By name:
+ * an engine's preset table may change order; tests/ui_pages_test.c checks every preset is here once.
+ * 2026-11-02: PLUCK dropped as its own tab (folded into KEYS) and STAB relabeled CHORD, so the 8-tab
+ * taxonomy (7 kinds + FX) makes room for the new FAV tab below without growing past 9 tabs total. */
+enum { BK_BASS, BK_KEYS, BK_ORGAN, BK_PAD, BK_LEAD, BK_CHORD, BK_FX };
+static const char *const BANK_KIND[] = {"BASS", "KEYS", "ORGN", "PAD", "LEAD", "CHRD", "FX"};
 static const struct { uint8_t kind, e; const char *name; } BANK[] = {   /* the PRESETS list: each track sees its engines' */
     /* ACID (track 1) */
     {BK_BASS, ENGI_ACID, "TB ACID"}, {BK_BASS, ENGI_ACID, "TB SQUARE"}, {BK_BASS, ENGI_ACID, "TB DIRTY"},
@@ -471,9 +473,9 @@ static const struct { uint8_t kind, e; const char *name; } BANK[] = {   /* the P
     {BK_BASS, ENGI_JUNO, "JUNO BASS"}, {BK_BASS, ENGI_JUNO, "SUB 106"}, {BK_KEYS, ENGI_JUNO, "JUNO KEYS"},
     {BK_ORGAN, ENGI_JUNO, "JUNO ORGAN"}, {BK_PAD, ENGI_JUNO, "JUNO STRING"}, {BK_PAD, ENGI_JUNO, "JUNO PAD"},
     {BK_PAD, ENGI_JUNO, "JUNO SWEEP"}, {BK_LEAD, ENGI_JUNO, "JUNO LEAD"}, {BK_LEAD, ENGI_JUNO, "JUNO HOOVER"},
-    {BK_STAB, ENGI_JUNO, "JUNO BRASS"}, {BK_STAB, ENGI_JUNO, "JUNO STAB"},
-    {BK_PAD, ENGI_JUNO, "JUNO 9TH"}, {BK_STAB, ENGI_JUNO, "DUB STAB"}, {BK_ORGAN, ENGI_JUNO, "DEEP ORGAN"},
-    {BK_PAD, ENGI_JUNO, "JUP STRINGS"}, {BK_STAB, ENGI_JUNO, "BRASS STAB"},
+    {BK_CHORD, ENGI_JUNO, "JUNO BRASS"}, {BK_CHORD, ENGI_JUNO, "JUNO STAB"},
+    {BK_PAD, ENGI_JUNO, "JUNO 9TH"}, {BK_CHORD, ENGI_JUNO, "DUB STAB"}, {BK_ORGAN, ENGI_JUNO, "DEEP ORGAN"},
+    {BK_PAD, ENGI_JUNO, "JUP STRINGS"}, {BK_CHORD, ENGI_JUNO, "BRASS STAB"},
     {BK_BASS, ENGI_JUNO, "MOOG SUB"}, {BK_BASS, ENGI_JUNO, "SH101 BASS"}, {BK_BASS, ENGI_JUNO, "TAURUS PDL"},
     {BK_BASS, ENGI_JUNO, "MATRIX BASS"}, {BK_BASS, ENGI_JUNO, "808 SUB"}, {BK_BASS, ENGI_JUNO, "ELECTRO BASS"},
     {BK_LEAD, ENGI_JUNO, "MINIMOOG LD"}, {BK_LEAD, ENGI_JUNO, "JUNO PULSE"}, {BK_LEAD, ENGI_JUNO, "SH101 LEAD"},
@@ -482,35 +484,35 @@ static const struct { uint8_t kind, e; const char *name; } BANK[] = {   /* the P
     /* ELEMENTS (track 2) */
     {BK_PAD, ENGI_ELEM, "BOW STRING"}, {BK_PAD, ENGI_ELEM, "BOW GLASS"}, {BK_BASS, ENGI_ELEM, "BOW BASS"},
     {BK_LEAD, ENGI_ELEM, "PIPE"}, {BK_LEAD, ENGI_ELEM, "BREATHY"}, {BK_LEAD, ENGI_ELEM, "BLOWN BELL"},
-    {BK_FX, ENGI_ELEM, "BOUNCE BAR"}, {BK_FX, ENGI_ELEM, "MARBLES"}, {BK_PLUCK, ENGI_ELEM, "RATTLE BELL"},
-    {BK_PLUCK, ENGI_ELEM, "PICKED BAR"}, {BK_PLUCK, ENGI_ELEM, "PICK CHIME"},
-    {BK_PAD, ENGI_ELEM, "OMINOUS"}, {BK_PAD, ENGI_ELEM, "DARK DRONE"}, {BK_PLUCK, ENGI_ELEM, "OMEN BELL"},
+    {BK_FX, ENGI_ELEM, "BOUNCE BAR"}, {BK_FX, ENGI_ELEM, "MARBLES"}, {BK_KEYS, ENGI_ELEM, "RATTLE BELL"},
+    {BK_KEYS, ENGI_ELEM, "PICKED BAR"}, {BK_KEYS, ENGI_ELEM, "PICK CHIME"},
+    {BK_PAD, ENGI_ELEM, "OMINOUS"}, {BK_PAD, ENGI_ELEM, "DARK DRONE"}, {BK_KEYS, ENGI_ELEM, "OMEN BELL"},
     /* PLAITS (track 3) */
-    {BK_LEAD, ENGI_PRISM, "FOLD LEAD"}, {BK_BASS, ENGI_PRISM, "FOLD BASS"}, {BK_PLUCK, ENGI_PRISM, "WEST PLUCK"},
-    {BK_PAD, ENGI_PRISM, "GLASS FOLD"}, {BK_PLUCK, ENGI_PRISM, "BUCHLA BELL"}, {BK_PAD, ENGI_PRISM, "FOLD DRONE"},
+    {BK_LEAD, ENGI_PRISM, "FOLD LEAD"}, {BK_BASS, ENGI_PRISM, "FOLD BASS"}, {BK_KEYS, ENGI_PRISM, "WEST PLUCK"},
+    {BK_PAD, ENGI_PRISM, "GLASS FOLD"}, {BK_KEYS, ENGI_PRISM, "BUCHLA BELL"}, {BK_PAD, ENGI_PRISM, "FOLD DRONE"},
     {BK_LEAD, ENGI_PRISM, "SUPER SWARM"}, {BK_PAD, ENGI_PRISM, "SWARM PAD"}, {BK_PAD, ENGI_PRISM, "GLISS CLOUD"},
     {BK_FX, ENGI_PRISM, "GRAIN RAIN"}, {BK_BASS, ENGI_PRISM, "SWARM BASS"}, {BK_PAD, ENGI_PRISM, "TABLE SWEEP"},
     {BK_BASS, ENGI_PRISM, "TABLE BASS"}, {BK_KEYS, ENGI_PRISM, "DIGI KEYS"}, {BK_PAD, ENGI_PRISM, "VOX TABLE"},
     {BK_LEAD, ENGI_PRISM, "TABLE LEAD"}, {BK_KEYS, ENGI_PRISM, "M1 PIANO"}, {BK_PAD, ENGI_PRISM, "D50 FANTASIA"},
     {BK_ORGAN, ENGI_PRISM, "GLASS ORGAN"}, {BK_PAD, ENGI_PRISM, "OVERTONES"},
-    {BK_PAD, ENGI_PRISM, "SPECTRAL PD"}, {BK_PLUCK, ENGI_PRISM, "ADD BELL"}, {BK_STAB, ENGI_PRISM, "DETROIT STAB"},
+    {BK_PAD, ENGI_PRISM, "SPECTRAL PD"}, {BK_KEYS, ENGI_PRISM, "ADD BELL"}, {BK_CHORD, ENGI_PRISM, "DETROIT STAB"},
     {BK_KEYS, ENGI_PRISM, "CHOP CHORD"}, {BK_PAD, ENGI_PRISM, "STRING MCH"},
-    {BK_PAD, ENGI_PRISM, "SOLINA MIN"}, {BK_ORGAN, ENGI_PRISM, "ORGAN CHRD"}, {BK_STAB, ENGI_PRISM, "HOUSE STAB"},
-    {BK_STAB, ENGI_PRISM, "RAVE 5TH"}, {BK_PAD, ENGI_PRISM, "DREAM 69"}, {BK_BASS, ENGI_PRISM, "SHOWMELOVE"},
+    {BK_PAD, ENGI_PRISM, "SOLINA MIN"}, {BK_ORGAN, ENGI_PRISM, "ORGAN CHRD"}, {BK_CHORD, ENGI_PRISM, "HOUSE STAB"},
+    {BK_CHORD, ENGI_PRISM, "RAVE 5TH"}, {BK_PAD, ENGI_PRISM, "DREAM 69"}, {BK_BASS, ENGI_PRISM, "SHOWMELOVE"},
     {BK_LEAD, ENGI_PRISM, "VA SAW LEAD"}, {BK_PAD, ENGI_PRISM, "VA PULSE PAD"}, {BK_BASS, ENGI_PRISM, "VCF BASS"},
     {BK_PAD, ENGI_PRISM, "VCF SWEEP"}, {BK_KEYS, ENGI_PRISM, "PD KEYS"}, {BK_LEAD, ENGI_PRISM, "PD RESO"},
-    {BK_PLUCK, ENGI_PRISM, "FM BELL"}, {BK_BASS, ENGI_PRISM, "FM BASS"}, {BK_KEYS, ENGI_PRISM, "DX BANK A"},
+    {BK_KEYS, ENGI_PRISM, "FM BELL"}, {BK_BASS, ENGI_PRISM, "FM BASS"}, {BK_KEYS, ENGI_PRISM, "DX BANK A"},
     {BK_KEYS, ENGI_PRISM, "DX BANK B"}, {BK_KEYS, ENGI_PRISM, "DX BANK C"}, {BK_KEYS, ENGI_PRISM, "DX EP 9TH"},
-    {BK_STAB, ENGI_PRISM, "RHODES STAB"}, {BK_KEYS, ENGI_PRISM, "JAZZY EP"},
+    {BK_CHORD, ENGI_PRISM, "RHODES STAB"}, {BK_KEYS, ENGI_PRISM, "JAZZY EP"},
     {BK_BASS, ENGI_PRISM, "SLAP BASS"}, {BK_LEAD, ENGI_PRISM, "MS20 LEAD"}, {BK_LEAD, ENGI_PRISM, "VOCODER LD"},
     {BK_PAD, ENGI_PRISM, "M1 UNIVERSE"}, {BK_PAD, ENGI_PRISM, "WAVESTATION"}, {BK_PAD, ENGI_PRISM, "CHOIR PAD"},
     {BK_FX, ENGI_PRISM, "VINYL HISS"}, {BK_FX, ENGI_PRISM, "RISER"}, {BK_FX, ENGI_PRISM, "RAIN AMBNT"},
-    {BK_STAB, ENGI_PRISM, "STAB THROW"}, {BK_FX, ENGI_PRISM, "VOCAL CHOP"},
+    {BK_CHORD, ENGI_PRISM, "STAB THROW"}, {BK_FX, ENGI_PRISM, "VOCAL CHOP"},
     {BK_PAD, ENGI_PRISM, "FORMANT VOX"},
     {BK_LEAD, ENGI_PRISM, "GRAIN BUZZ"}, {BK_LEAD, ENGI_PRISM, "TERRAIN"}, {BK_PAD, ENGI_PRISM, "TERRAIN PAD"},
     {BK_PAD, ENGI_PRISM, "STR MACHINE"}, {BK_PAD, ENGI_PRISM, "POLY STRING"}, {BK_LEAD, ENGI_PRISM, "CHIP LEAD"},
-    {BK_PLUCK, ENGI_PRISM, "CHIP ARP"}, {BK_PLUCK, ENGI_PRISM, "KS GUITAR"}, {BK_PLUCK, ENGI_PRISM, "KS HARP"},
-    {BK_PLUCK, ENGI_PRISM, "MODAL BELL"}, {BK_PLUCK, ENGI_PRISM, "MODAL WOOD"}, {BK_FX, ENGI_PRISM, "NOISE SWEEP"},
+    {BK_KEYS, ENGI_PRISM, "CHIP ARP"}, {BK_KEYS, ENGI_PRISM, "KS GUITAR"}, {BK_KEYS, ENGI_PRISM, "KS HARP"},
+    {BK_KEYS, ENGI_PRISM, "MODAL BELL"}, {BK_KEYS, ENGI_PRISM, "MODAL WOOD"}, {BK_FX, ENGI_PRISM, "NOISE SWEEP"},
     {BK_FX, ENGI_PRISM, "NOISE TONE"}, {BK_FX, ENGI_PRISM, "SPEECH"}, {BK_FX, ENGI_PRISM, "ROBOT WORDS"},
     {BK_FX, ENGI_PRISM, "PARTICLES"}, {BK_FX, ENGI_PRISM, "DROPLETS"}, {BK_FX, ENGI_PRISM, "PL KICK"},
     {BK_FX, ENGI_PRISM, "PL SNARE"}, {BK_FX, ENGI_PRISM, "PL HIHAT"},
@@ -601,20 +603,31 @@ static uint32_t preset_at(uint32_t n, uint32_t *k) { return preset_at_of(TSEL, n
 static uint32_t preset_list_idx(uint32_t n) { uint32_t x = pl_entry(TSEL, n); return x < NBANK ? x : NBANK; }
 static const char *preset_kind(uint32_t n) { uint32_t x = preset_list_idx(n); return x < NBANK ? BANK_KIND[BANK[x].kind] : "USER"; }
 
-/* MAIN MENU: PRESETS category tabs (ALL, then BK_BASS..BK_FX). ui.browse_kind: 0 = ALL, 1..8 = BK_* + 1
- * (so the zero-initialized default at boot is ALL with no separate init needed). Factory sounds only --
- * a tab narrows what's browsable, user presets still show up under ALL (same as the unfiltered list did).
+/* favorites: fav_get/fav_set and their storage are in core.h (the one file every build already includes
+ * first, host tests included -- see its comment), persisted across power-off by project.c's settings_write
+ * / dsu_boot (the third part's FAV_PART bytes, FELUCCA_FLASH only). */
+
+/* MAIN MENU: PRESETS category tabs (ALL, then BK_BASS..BK_FX, then FAV). ui.browse_kind: 0 = ALL,
+ * 1..7 = BK_* + 1, 8 = FAV (so the zero-initialized default at boot is ALL with no separate init needed).
+ * Factory sounds only -- a tab narrows what's browsable, user presets still show up under ALL (same as
+ * the unfiltered list did); FAV narrows to starred factory sounds only (knob 3 on this page stars /
+ * unstars whatever's showing, ui_input.c edit_param).
  * 2026-11-02: one global list across every engine, not just the selected lane's -- a sound's engine lives
  * on one particular lane (eng_allowed: ACID/JUNO on lane 1, ELEMENTS on lane 2, PRISM on lane 3, a fixed
  * memory-arena split, not a UI choice), so picking a sound whose engine isn't the current lane's jumps the
  * lane for you (browse_go), the same way LIVE SETLIST recall already jumps lanes for its slots. */
-#define BROWSE_TABS (8u + 1u)
-static const char *const BROWSE_TAB_LABEL[BROWSE_TABS] = {"ALL", "BASS", "KEYS", "ORGN", "PAD", "LEAD", "PLCK",
-                                                            "STAB", "FX"};
+#define BROWSE_TABS (7u + 1u + 1u)
+#define FAV_TAB (BROWSE_TABS - 1u)
+static const char *const BROWSE_TAB_LABEL[BROWSE_TABS] = {"ALL", "BASS", "KEYS", "ORGN", "PAD", "LEAD", "CHRD",
+                                                            "FX", "FAV"};
 static void track_select(uint32_t i);                 /* forward (defined below): browse_go jumps lanes too */
 static uint32_t eng_home_lane(uint32_t e)              /* the one lane that engine's arena fits (eng_allowed) */
 {
     return e == ENGI_ELEM ? 1u : e == ENGI_PRISM ? 2u : 0u;
+}
+static int browse_match(uint32_t i, uint32_t tab)    /* does BANK entry i belong to this tab */
+{
+    return !tab || (tab == FAV_TAB ? fav_get(i) : BANK[i].kind == tab - 1u);
 }
 static uint32_t browse_count(uint32_t tab)            /* every factory BANK entry matching this tab, any engine,
                                                         * + user presets on ALL (tab 0), same as the old list */
@@ -623,7 +636,7 @@ static uint32_t browse_count(uint32_t tab)            /* every factory BANK entr
     if (!bank_ready)
         bank_resolve();
     for (i = 0; i < NBANK; i++)
-        if (bank_pi[i] != 0xFFu && (!tab || BANK[i].kind == tab - 1u))
+        if (bank_pi[i] != 0xFFu && browse_match(i, tab))
             c++;
     if (!tab)
         c += up_count();
@@ -636,7 +649,7 @@ static uint32_t browse_entry(uint32_t n, uint32_t tab)
     if (!bank_ready)
         bank_resolve();
     for (i = 0; i < NBANK; i++)
-        if (bank_pi[i] != 0xFFu && (!tab || BANK[i].kind == tab - 1u)) {
+        if (bank_pi[i] != 0xFFu && browse_match(i, tab)) {
             if (c == n)
                 return i;
             c++;

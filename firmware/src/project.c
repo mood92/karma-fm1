@@ -926,10 +926,15 @@ static int project_used(uint32_t slot) { return proj_ok(&proj_slot[slot & 3u]); 
 #define LIVE_PART 44u
 #define LIVE_PART_OLD 24u
 #define SET_PART (MIDI_PART + LIVE_PART)
-_Static_assert(sizeof(persist_t) + sizeof(dsu_bank_t) + SET_PART <= ST_PAYLOAD_MAX, "the settings object fits its sector");
-static uint8_t midi_saved[SET_PART];
+/* MAIN MENU 1.3: the settings object's fourth part, after the LIVE SETLIST part: the FAV_PART bytes above
+ * (favorited factory BANK presets). Written only together with (after) the third part, so an object with
+ * it is always exactly SET_PART + FAV_PART; one without it reads as no favorites. */
+_Static_assert(sizeof(persist_t) + sizeof(dsu_bank_t) + SET_PART + FAV_PART <= ST_PAYLOAD_MAX,
+               "the settings object fits its sector");
+static uint8_t third_saved[SET_PART + FAV_PART];    /* the MIDI + LIVE SETLIST + FAV parts as flash has them
+                                                     * (settings_save: written when they differ) */
 static uint8_t drch_seed;                           /* a settings object as 2.5 wrote it: the drum channel was the
-                                                     * project's then (autosave_resume takes it from a 2.5 autosave) */               /* the part as flash has it (settings_save: written when it differs) */
+                                                     * project's then (autosave_resume takes it from a 2.5 autosave) */
 static void midi_part_fill(uint8_t *b)
 {
     uint32_t k;
@@ -985,18 +990,32 @@ static void midi_part_read(const uint8_t *b, uint32_t n)
     }
     fm1_irq_on();
 }
+static void fav_part_fill(uint8_t *b) { memcpy(b, fav_bits, FAV_PART); }
+static int fav_part_default(const uint8_t *b)
+{
+    uint32_t k;
+    for (k = 0; k < FAV_PART; k++)
+        if (b[k])
+            return 0;
+    return 1;
+}
+static void fav_part_read(const uint8_t *b) { memcpy(fav_bits, b, FAV_PART); }
 static int settings_write(const persist_t *p)
 {
-    uint8_t mp[SET_PART];
+    uint8_t mp[SET_PART + FAV_PART];
     if (!dsu_valid(&dsu))
         dsu_defaults();
     midi_part_fill(mp);
+    fav_part_fill(mp + SET_PART);
     /* the third part only when it is not the default: without, the object is exactly 2.5's (2.5 reads it whole, SYN
-     * kits included; with it, it takes the object for one without them) */
-    if (st_save3(OBJ_SETTINGS, p, sizeof *p, &dsu, sizeof dsu, mp, midi_part_default(mp) ? 0u : sizeof mp))
+     * kits included; with it, it takes the object for one without them). FAV_PART rides along with it: there is
+     * no length tier for "favorites but nothing else", so a lone favorite still writes the (default) MIDI +
+     * LIVE SETLIST bytes ahead of it too. */
+    if (st_save3(OBJ_SETTINGS, p, sizeof *p, &dsu, sizeof dsu, mp,
+                 midi_part_default(mp) && fav_part_default(mp + SET_PART) ? 0u : sizeof mp))
         return -1;
     dsu_dirty = 0;
-    memcpy(midi_saved, mp, sizeof midi_saved);
+    memcpy(third_saved, mp, sizeof third_saved);
     return 0;
 }
 static void dsu_boot(void)                          /* the SYN kits (and the MIDI part) from the settings object, else */
@@ -1007,28 +1026,33 @@ static void dsu_boot(void)                          /* the SYN kits (and the MID
     setlist_default();
     for (k = 0; k < ML_N; k++)
         ml_tab[k] = 0;
+    memset(fav_bits, 0, sizeof fav_bits);
     if (st_current(OBJ_SETTINGS, &h) >= 0 &&
         (h.len == len || h.len == len + 2u * ML_N || h.len == len + 2u * ML_N + 4u || h.len == len + MIDI_PART ||
-         h.len == len + MIDI_PART + LIVE_PART_OLD || h.len == len + SET_PART) &&
+         h.len == len + MIDI_PART + LIVE_PART_OLD || h.len == len + SET_PART || h.len == len + SET_PART + FAV_PART) &&
         dsu_valid((const dsu_bank_t *)(st_buf + sizeof(persist_t)))) {
         memcpy(&dsu, st_buf + sizeof(persist_t), sizeof dsu);
         for (k = 0; k < DSU_N; k++)
             dsu_fix_kit(&dsu.k[k]);
         if (h.len > len)
             midi_part_read(st_buf + len, h.len - len > MIDI_PART ? MIDI_PART : h.len - len);
-        if (h.len == len + SET_PART) {                  /* MAIN MENU: id, lane; the old 1-byte/slot format
-                                                          * (len + MIDI_PART + LIVE_PART_OLD) meant a
-                                                          * lane-relative list position -- not safely
-                                                          * reinterpreted, so it is left as setlist_default() */
+        if (h.len == len + SET_PART || h.len == len + SET_PART + FAV_PART) {   /* MAIN MENU: id, lane; the
+                                                          * old 1-byte/slot format (len + MIDI_PART +
+                                                          * LIVE_PART_OLD) meant a lane-relative list
+                                                          * position -- not safely reinterpreted, so it is
+                                                          * left as setlist_default() */
             for (k = 0; k < SETLIST_N; k++) {
                 setlist_id[k] = st_buf[len + MIDI_PART + 2u * k];
                 setlist_lane[k] = st_buf[len + MIDI_PART + 2u * k + 1u];
             }
             setlist_ready = 1;
         }
+        if (h.len == len + SET_PART + FAV_PART)
+            fav_part_read(st_buf + len + SET_PART);
         drch_seed = h.len == len;
     }
-    midi_part_fill(midi_saved);
+    midi_part_fill(third_saved);
+    fav_part_fill(third_saved + SET_PART);
     dsu_dirty = 0;
 }
 #endif
@@ -1055,9 +1079,10 @@ static void settings_save(void)
         return;
     persist_fill(&p);
     {
-        uint8_t mp[SET_PART];
+        uint8_t mp[SET_PART + FAV_PART];
         midi_part_fill(mp);
-        if (!memcmp(&p, &persist_saved, sizeof p) && !memcmp(mp, midi_saved, sizeof mp) && !dsu_dirty)
+        fav_part_fill(mp + SET_PART);
+        if (!memcmp(&p, &persist_saved, sizeof p) && !memcmp(mp, third_saved, sizeof mp) && !dsu_dirty)
             return;                                /* unchanged: no erase cycle */
     }
     if (settings_write(&p) == 0)

@@ -384,3 +384,25 @@ static volatile uint32_t fm1_ms;  /* milliseconds since boot (TIMER4-based, TIME
 /* Two early failed boots -> USB recovery; recovery reset -> mask-ROM UBOOT. */
 #include "bootguard.h"
 bootguard_t bootguard __attribute__((section(".noinit")));
+
+/* MAIN MENU 1.3: favorited factory BANK presets (ui.c's BANK / NBANK, the PRESETS browser's FAV tab),
+ * one bit per BANK index, low bit first -- 256 bits' worth, well past NBANK (129) so the bank can keep
+ * growing without resizing this. Plain RAM state, here (not ui.c or project.c) because ui.c, ui_draw.c and
+ * ui_input.c read/write it unconditionally while project.c's settings_write/dsu_boot persist it to flash
+ * (FELUCCA_FLASH only, fav_part_fill/default/read there) -- host tests pull in each of those independently
+ * of the others, so the one thing every one of them already includes first is this header. */
+#define FAV_PART 32u
+static uint8_t fav_bits[FAV_PART];
+static int fav_get(uint32_t bank_idx)
+{
+    return bank_idx < FAV_PART * 8u && (fav_bits[bank_idx >> 3] >> (bank_idx & 7u) & 1u) != 0u;
+}
+static void fav_set(uint32_t bank_idx, int on)
+{
+    if (bank_idx >= FAV_PART * 8u)
+        return;
+    if (on)
+        fav_bits[bank_idx >> 3] |= (uint8_t)(1u << (bank_idx & 7u));
+    else
+        fav_bits[bank_idx >> 3] &= (uint8_t)~(1u << (bank_idx & 7u));
+}

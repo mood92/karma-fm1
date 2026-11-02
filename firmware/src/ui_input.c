@@ -417,7 +417,8 @@ static void edit_param(uint32_t slot, int32_t steps)
         return;
     }
     if (pg->graph == GR_BROWSE) {                         /* MAIN MENU: KNOB 1 scrolls the list, KNOB 2 the category
-                                                            * tab (ALL, then BK_BASS..BK_FX) */
+                                                            * tab (ALL, then BK_BASS..BK_FX, then FAV), KNOB 3
+                                                            * stars (right) / unstars (left) whatever's showing */
         if (slot == 0u && !is_drum(TSEL)) {               /* MAIN MENU: one global list, every tab (ALL included) */
             uint32_t total = browse_count(ui.browse_kind);
             if (total) {
@@ -431,6 +432,16 @@ static void edit_param(uint32_t slot, int32_t steps)
             ui.browse_pos = 0;
             if (browse_count(ui.browse_kind))              /* ALL included: jump to this tab's first sound too */
                 browse_go(0);
+        } else if (slot == 2u && !is_drum(TSEL) && steps != 0) {   /* FAVORITE: user presets don't have one */
+            uint32_t total = browse_count(ui.browse_kind);
+            if (total) {
+                uint32_t i = browse_entry(ui.browse_pos % total, ui.browse_kind);
+                if (i < NBANK) {
+                    fav_set(i, steps > 0);
+                    ui_say(steps > 0 ? "FAV: " : "UNFAV: ", BANK[i].name);
+                    ui.force = 1;
+                }
+            }
         }
         return;
     }
