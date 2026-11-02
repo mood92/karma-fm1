@@ -1,0 +1,55 @@
+# Build the browser emulator (WebAssembly) and publish it to GitHub Pages, so changes can be
+# tried in a browser without installing anything or flashing real hardware. Separate from build.yml
+# (the real JieLi firmware package): this only needs Emscripten, not the JieLi toolchain/SDK.
+name: emulator
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
+      - name: Python packages
+        run: python3 -m pip install Pillow
+
+      - name: Generated headers (fonts, icons, tables, samples) -- no JieLi toolchain needed for this
+        run: python3 -c "import sys; sys.path.insert(0, 'tools'); import build as b; b.generate()"
+
+      - uses: mymindstorm/setup-emsdk@v14
+
+      - name: Build the browser emulator (WebAssembly)
+        run: sh web/emu/build.sh
+
+      - uses: actions/configure-pages@v5
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: build/emu
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/deploy-pages@v4
+        id: deployment
