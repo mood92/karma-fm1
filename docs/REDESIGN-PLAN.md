@@ -63,6 +63,24 @@ trims on top of KARMA's native page-cycling UI. This plan is the actual rebuild.
 4. **Preset tagging** — I tag all ~150 factory presets by sub-style as best I can from the
    name/sound; Hayden corrects the wrong ones once he can hear them in BROWSE.
 
+## Status (Nov 2 2026)
+
+Phases 1-5 are done (commits after `5399486`):
+
+- **Removed:** the sequencer pages and generators (STEP .. SONG), the steps / roll / song layers, punch-in
+  (FX held, INSERT pages), and the remaining drum UI (HEX pages, GLO > DRUMS, TRACKS > DRUMS). The engine
+  underneath stays: the looper (REC / PLAY), projects and the editor still use it.
+- **Buttons:** HOME = SOUND (again: TRACKS, the lanes' loops; again: the visualiser), SAVE = BROWSE (then
+  USER, PROJECT, TOOLS), SEQ = SETLIST, LFO = LIVE (a tap keeps it open). ENV holds the LFO pages now. FX,
+  EDIT, ARP, SEL, GLO open their pages; EDIT held erases, SEL held sets the key, GLO held is the mixer.
+- **SOUND:** the lane's sound large, its kind, the last note, the setlist slot, the lane's character, the
+  sound's four main knobs.
+- **BROWSE:** KNOB 1 the list, 2 the tab, 3 favourite, 4 SET (into SETLIST's slot); PRESETS scrolls too.
+- **SETLIST:** KNOB 1 slot (plays it), 2 move, 3 store the lane's sound, 4 clear (twice); PRESETS = KNOB 1.
+- **LIVE:** the slot playing and its Program Change number in the header.
+
+Still open: sub-style tags (deep house / jazzy house) on the presets, and the SMK-37 chord-capture mode.
+
 ## Rough phase order
 
 1. Strip what's being removed (sequencer, punch FX, drum UI) — mechanical, and shrinks the

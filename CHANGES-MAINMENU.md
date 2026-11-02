@@ -29,6 +29,10 @@ by or supported by Hügelton Instruments, M-VAVE, or any of the third-party proj
 - **Visual rework:** the boot screen, header and track bar were changed to the Main Menu's own
   mark and a three-lane layout; new lane characters and a knob-touch pop-up (name, value and a
   gauge) replace the prior KARMA-branded art in the areas this fork touches.
+- **Four screens (Nov 2 2026):** the instrument is SOUND (HOME), BROWSE (SAVE), SETLIST (SEQ) and LIVE (LFO).
+  The step sequencer's pages and generators, the steps / roll / song layers, punch-in effects and the last
+  of the drum UI were removed from the panel; the looper (REC / PLAY) stays. SETLIST edits the 20 slots as a
+  list (play, move, store, clear) and BROWSE's KNOB 4 puts a sound into a slot. See docs/REDESIGN-PLAN.md.
 - **Firmware identity:** the version string reported to the editor, console and splash screen
   (`FELUCCA_VERSION`) is set at build time to identify this fork rather than KARMA's own version.
 - **Host test suite:** test-infrastructure fixes (a field-name bug, drum-level defaults after this
@@ -40,10 +44,10 @@ by or supported by Hügelton Instruments, M-VAVE, or any of the third-party proj
 See `git log 7d2560b..HEAD` in this repository for the exact commit-by-commit history (base commit
 `7d2560b` is the last unmodified KARMA commit this fork started from). The files with changes as of
 this notice: `firmware/src/ui.c`, `ui_input.c`, `ui_layers.c`, `ui_draw.c`, `ui_vis.c`, `ui_op.c`,
-`drums.c`, `project.c`, `params.c`, `upreset.c`, `felucca.c`; `tools/build.py`; and the host test
+`ui_op.c`, `drums.c`, `project.c`, `params.c`, `upreset.c`, `felucca.c`; `tools/build.py`; and the host test
 suite under `tests/` (`dsyn_test.c`, `studio_drums_test.c`, `drum_send_test.c`, `seq2_test.c`,
 `userkit_test.c`, `fx251_test.c`, `regress.c`, `hostsim.c`, `ui_pages_test.c`, and the new
-`live_persist_test.c`).
+`live_persist_test.c` and `shots_test.c`).
 
 This notice is kept up to date as the fork continues; it does not attempt to list every future
 change individually once a change is reflected here in substance.

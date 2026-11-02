@@ -8,6 +8,20 @@ KARMA is a free, open-source (GPL-3.0-only) firmware for the M-VAVE FM-1 by Arie
 
 ---
 
+> **Main Menu Live Player (this fork):** the panel is four screens, and much of what follows about the step
+> sequencer, song sections, drums and punch-in no longer applies. The short version:
+>
+> | Button | Screen | Knobs |
+> | --- | --- | --- |
+> | **HOME** | **SOUND**: the lane's sound, its kind, the last note, its setlist slot. HOME again: TRACKS (the loops), again: the visualiser | the sound's four main knobs |
+> | **SAVE** | **BROWSE**: every sound, by tab (ALL, BASS, KEYS, ORGN, PAD, LEAD, CHRD, FX, FAV). Picking one loads it on its lane | 1 list, 2 tab, 3 favourite, 4 **SET** into the SETLIST slot |
+> | **SEQ** | **SETLIST**: the 20 LIVE slots as a list | 1 slot (plays it), 2 move, 3 store the lane's sound, 4 clear (twice) |
+> | **LFO** | **LIVE**: the slots on the keys (white keys 1-16, black keys 17-20); tap a key to play that slot. OCT+ then a key stores. The header shows the slot playing and its Program Change number | the sound's four main knobs |
+>
+> ENV now holds the LFO pages too. FX, EDIT, ARP, SEL and GLO open their pages; EDIT held erases loop notes,
+> SEL held sets the key, GLO held is the mixer. REC and PLAY are the looper. MIDI Program Change 0-19 recalls
+> slots 1-20 from Ableton.
+
 ## How to read this guide
 
 | Written | Means |

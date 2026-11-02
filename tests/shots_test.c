@@ -51,6 +51,11 @@ int main(int argc, char **argv)
     encs[panel.enc[EN_K4]] = 1; frames(2); shot("shot-19-browse-set");
     tap(B_SEQ); shot("shot-20-setlist-after-set");
     tap(B_LFO); shot("shot-21-live");
+    key(key_of_white(1)); shot("shot-22-live-recalled");
+    tap(B_HOME); shot("shot-23-sound-after-live");
+    track_select(1); go_home(); key(12); shot("shot-24-sound-lane2");
+    track_select(2); go_home(); key(15); shot("shot-25-sound-lane3");
+    tap(B_SEQ); shot("shot-26-setlist");
     printf("shots: %s\n", outdir);
     return 0;
 }

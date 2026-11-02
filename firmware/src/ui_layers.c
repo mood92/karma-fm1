@@ -691,7 +691,14 @@ static void layer_title(const char *name, const char *sub, uint16_t col, uint32_
     } else {
         cv_text(4 + text_w(&FONT_L, name) + 10, 18, &FONT_S, ui.msg_t ? ui.msg : sub, ui.msg_t ? C_WHITE : TE_G3);
     }
-    if (locked) {                                         /* locked open (HOME): any button lets it go */
+    if (ui.layer == LY_LIVE && live_slot[song.sel % NPART] < SETLIST_N) {   /* MAIN MENU: LIVE: the slot's MIDI */
+        char pc[8] = "PC ";                                                 /* Program Change number (0 = slot 1) */
+        int32_t w;
+        fmt_int(pc + 3, (int32_t)live_slot[song.sel % NPART]);
+        w = (int32_t)text_w(&FONT_S, pc) + 8;
+        cv_rect(236 - w, 4, w, 15, TE_COL[song.sel & 3u]);
+        cv_text(240 - w, 4, &FONT_S, pc, C_BLACK);
+    } else if (locked && ly_lock != LY_LIVE) {            /* locked open (HOME): any button lets it go */
         int32_t w = (int32_t)text_w(&FONT_S, "LOCK") + 8;
         cv_rect(236 - w, 4, w, 15, C_WHITE);
         cv_text(240 - w, 4, &FONT_S, "LOCK", C_BLACK);
@@ -1015,9 +1022,9 @@ static void layer_screen_draw(void)
         }
         if (live_store) {
             str_cpy(sub, "store: pick a slot", sizeof sub);
-        } else if (live_slot[sel] < SETLIST_N) {
-            char hd[8] = {'L', (char)('1' + sel), ' ', 0, 0, 0, 0, 0};
-            fmt_int(hd + 3, (int32_t)live_slot[sel] + 1);
+        } else if (live_slot[sel] < SETLIST_N) {          /* MAIN MENU: now playing: "3 tb acid" */
+            char hd[8];
+            fmt_int(hd, (int32_t)live_slot[sel] + 1);
             str_cpy(sub, hd, sizeof sub);
             {
                 uint32_t n = str_len(sub);
