@@ -340,7 +340,7 @@ static void acidmax_render(track_t *t, voice_t *v, int32_t *out, uint32_t n, con
         A->nb = fm_flush(A->nb);
     }
     for (i = 0; i < n; i++) {
-        float s = y[i] * 96000.0f;                    /* (the 303 peaks near 0.5 on an accent) */
+        float s = y[i] * 336000.0f;                   /* (the 303 peaks near 0.5 on an accent) */
         int32_t q = s > 60000.0f ? 60000 : s < -60000.0f ? -60000 : (int32_t)s;
         out[i] += voice_amp(q, m, i) << 1;
     }
