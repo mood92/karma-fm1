@@ -141,6 +141,12 @@ static const preset_t JUNO_PRESETS[] = {
     /* Juno/Jupiter arp -- a slower, filtered arpeggio that gradually opens up (a longer attack on the
      * filter envelope). */
     {"JUP ARP", {0, 0, 0, 0, 60, 15, 70, 2}, {25, 60, 100, 30}, 0, 1, FX(0, 0, 16, 20), ARP(1, 40, 1, 70)},
+    /* pads and a texture, appended at the end (see the note above). */
+    /* JV-1080 "Pad Warm" -- the classic 90s ROMpler pad, soft and a little lo-fi, saw+pulse with a slow
+     * attack and light chorus. */
+    {"PAD WARM", {2, 50, 20, 0, 40, 15, 20, 1}, {75, 85, 105, 85}, 0, 0, FX(0, 0, 10, 36)},
+    /* sci-fi bleep/blip -- a short synth chirp (SH-101/MS-20/Casio style accent) for electro. */
+    {"SCIFI BLIP", {1, 0, 0, 20, 70, 50, 100, 0}, {0, 8, 0, 6}, 0, 1, FX(0, 0, 16, 10)},
 };
 
 static const engine_t ENG_JUNO = {

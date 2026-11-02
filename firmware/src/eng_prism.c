@@ -305,6 +305,25 @@ static const preset_t PRISM_PRESETS[] = {
     /* warm vocoder lead (Korg/Roland vocoder lines) -- the formant model, brighter and more mono-lead voiced
      * than FORMANT VOX's pad setting. */
     {"VOCODER LD", {12, 70, 70, 50, 45, 0, 0, 0}, {0, 55, 90, 25}, 0, 1, FX(0, 20, 14, 30)},
+    /* Korg M1 "Universe" -- a huge, evolving, slightly cheesy pad (the SWARM model, wide spread). */
+    {"M1 UNIVERSE", {1, 90, 70, 100, 0, 0, 0, 0}, {80, 95, 125, 100}, 0, 0, FX(0, 40, 24, 60)},
+    /* Ensoniq VFX/SQ-80 and Wavestation pads -- moving wavetable textures, futuristic and a bit eerie. */
+    {"WAVESTATION", {2, 60, 70, 90, 0, 0, 0, 0}, {65, 90, 118, 90}, 0, 0, FX(0, 30, 22, 54), XP(P_LRATE + 1, 16, P_LD_FLT + 1, 26)},
+    /* vowel/choir pad -- the formant model voiced as a held "ahh" chord (9th) for emotional moments;
+     * FORMANT VOX stays the plainer single-note version of the same model. */
+    {"CHOIR PAD", {12, 40, 55, 70, 20, 0, 0, 0}, {60, 90, 118, 90}, 0, 0, FX(0, 30, 18, 50), XP(P_CHORD + 1, 3)},
+    /* vinyl crackle/tape hiss -- a steady noise texture layer for dusty chord progressions. */
+    {"VINYL HISS", {18, 10, 20, 60, 0, 0, 0, 0}, {30, 100, 127, 60}, 0, 0, FX(0, 0, 0, 20)},
+    /* noise riser -- a long rising filter sweep for transitions (longer and slower than NOISE SWEEP). */
+    {"RISER", {18, 80, 30, 100, 110, 0, 0, 0}, {127, 60, 0, 10}, 0, 1, FX(0, 0, 10, 30)},
+    /* rain/room-tone atmosphere -- a low, filtered noise drone for dub techno depth. */
+    {"RAIN AMBNT", {18, 20, 10, 40, 0, 0, 0, 0}, {80, 100, 127, 100}, 0, 0, FX(0, 10, 20, 50)},
+    /* "echoing delay throw" -- a short simple chord (triad) meant to be caught by a long delay/reverb tail,
+     * then muted; a performance patch more than a sustained sound. */
+    {"STAB THROW", {4, 40, 20, 0, 0, 0, 0, 0}, {0, 20, 0, 10}, 0, 0, FX(0, 0, 90, 80)},
+    /* sampled vocal chop stand-in -- the speech model, pitched short and choppy (no sampler: memory limits
+     * ruled that out). ROBOT WORDS already covers the vocoded one-liner side of this. */
+    {"VOCAL CHOP", {19, 60, 40, 40, 0, 0, 0, 0}, {0, 15, 0, 15}, 0, 1, FX(0, 0, 10, 14)},
 };
 
 /* CHORD: its three controls by what they do there */
