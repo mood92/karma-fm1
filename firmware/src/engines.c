@@ -27,6 +27,7 @@ static inline int32_t soft_knee(int32_t y, int32_t k)   /* linear up to k, then 
 #include "eng_elem.c"           /* ELEMENTS: Elements' exciters (Emilie Gillet, MIT) on PHYS's bank */
 #include "eng_acid.c"           /* ACID: X0X's TB-303 (Charles Vestal, GPL-3.0; Open303, MIT) */
 #include "eng_juno.c"           /* JUNO: FM-106's Juno-106 voice (PatttF, GPL-3.0; after ultramaster KR-106) */
+#include "eng_acidmax.c"        /* ACID MAX: the 303 voice with shapes, wavetables and a tone stage (MAIN MENU ACID) */
 #include "eng_prism.c"          /* PRISM: models of Plaits (Emilie Gillet, MIT), fixed point: prism_dsp.c */
 
 static void gone_note_on(track_t *t, voice_t *v) { (void)t; (void)v; }
@@ -51,9 +52,9 @@ static const engine_t ENG_GONE = {
 /* each part's arena, as big as its engines need (2026-10-20): track 1 ACID / JUNO, track 2 ELEMENTS, track 3
  * PLAITS, whose biggest model (PARTICLE: Plaits' reverb) takes what is left of the pool */
 #define PRISM_ARENA (sizeof(void *) == 8u ? 16704u : 16640u)   /* (a 64-bit host: the pointers in Plaits' objects) */
-typedef union { acid_slot_t acid; juno_slot_t juno; } eng_arena0_t;
-typedef union { uint32_t phys[PHYS_ARENA / 4u]; } eng_arena1_t;
-typedef union { prism_slot_t prism[NVOICE]; uint64_t plx[(sizeof(void *) == 8u ? 16704u : 16640u) / 8u]; } eng_arena2_t;
+typedef union { acid_slot_t acid; juno_slot_t juno; acidmax_slot_t acidmax; } eng_arena0_t;
+typedef union { uint32_t phys[PHYS_ARENA / 4u]; acidmax_slot_t acidmax; } eng_arena1_t;
+typedef union { prism_slot_t prism[NVOICE]; uint64_t plx[(sizeof(void *) == 8u ? 16704u : 16640u) / 8u]; acidmax_slot_t acidmax; } eng_arena2_t;
 static eng_arena0_t eng_arena0 __attribute__((section(".pool")));
 static eng_arena1_t eng_arena1 __attribute__((section(".pool")));
 static eng_arena2_t eng_arena2 __attribute__((section(".pool")));
@@ -87,7 +88,7 @@ static void *eng_arena_need(const track_t *t, uint32_t eng, uint32_t need)
 static void *eng_arena_of(const track_t *t, uint32_t eng)
 {
     uint32_t need = eng == ENGI_ACID ? sizeof(acid_slot_t) : eng == ENGI_JUNO ? sizeof(juno_slot_t)
-                  : eng == ENGI_PRISM ? sizeof(prism_slot_t) : PHYS_ARENA;
+                  : eng == ENGI_ACIDMAX ? sizeof(acidmax_slot_t) : eng == ENGI_PRISM ? sizeof(prism_slot_t) : PHYS_ARENA;
     return eng_arena_need(t, eng, need);
 }
 #if FELUCCA_SLICE
@@ -101,18 +102,27 @@ static const engine_t *const ENGINES[NENGINES] = {&ENG_GONE, &ENG_GONE, &ENG_GON
 #if FELUCCA_SLICE
                                                     &ENG_SLICE,
 #endif
-                                                    &ENG_PRISM, &ENG_ELEM, &ENG_ACID, &ENG_JUNO,
+                                                    &ENG_PRISM, &ENG_ELEM, &ENG_ACID, &ENG_JUNO, &ENG_ACIDMAX,
 };
 /* the engines each synth track may play (the drum track: none). PRESETS lists only theirs */
 static int eng_allowed(const track_t *t, uint32_t e)
 {
     uint32_t p = (uint32_t)(t - trk);
+#if MM_ACID
+    return p < NPART && e == ENGI_ACIDMAX;           /* MAIN MENU ACID: three ACID MAX lanes */
+#else
     return p == 0u ? (e == ENGI_ACID || e == ENGI_JUNO) : p == 1u ? e == ENGI_ELEM : p == 2u ? e == ENGI_PRISM : 0;
+#endif
 }
 static uint32_t eng_default(const track_t *t)        /* the engine a track falls back to */
 {
     uint32_t p = (uint32_t)(t - trk);
+#if MM_ACID
+    (void)p;
+    return ENGI_ACIDMAX;
+#else
     return p == 0u ? ENGI_ACID : p == 1u ? ENGI_ELEM : ENGI_PRISM;
+#endif
 }
 
 /* every factory sound as loud as the others: a level trim per preset, 1/2 dB, measured on a phrase

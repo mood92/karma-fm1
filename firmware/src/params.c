@@ -84,7 +84,7 @@ static const char *const N_ENGNAME[] = {"ANALOG", "DIGITAL", "PHASE", "LOFI", "S
 #if FELUCCA_SLICE
                                              "SLICE",
 #endif
-                                        "PLAITS", "ELEMENTS", "ACID", "JUNO",
+                                        "PLAITS", "ELEMENTS", "ACID", "JUNO", "ACIDMAX",
 };
 _Static_assert(sizeof N_ENGNAME / sizeof N_ENGNAME[0] == NENGINES, "a name an engine");
 

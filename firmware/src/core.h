@@ -20,7 +20,7 @@ enum { V_POLY, V_MONO, V_LEGATO, V_UNISON };   /* P_VOICE */
 /* SLOOP 2.4: FM6 (eng_fm6.c) is engine 9 in every build; SLICE, when built, comes last (10). Projects and user
  * presets store the engine index as a byte, and no shipped SLOOP was built with SLICE, so its number is stored
  * nowhere: FM6 may take 9 and SLICE moves up (engines.c ENGINES[], params.c N_ENGNAME follow this order) */
-#define NENGINES (16 + FELUCCA_SLICE)
+#define NENGINES (17 + FELUCCA_SLICE)
 #define ENGI_GRAIN 8u            /* GRAIN, PHYS, NOISE (SLOOP 2.5, appended after FM6: the stores keep the numbers) */
 #define ENGI_PHYS 10u
 #define ENGI_NOISE 11u
@@ -29,6 +29,11 @@ enum { V_POLY, V_MONO, V_LEGATO, V_UNISON };   /* P_VOICE */
 #define ENGI_ELEM (13u + FELUCCA_SLICE)    /* ELEMENTS (Elements' exciters on PHYS's bank: eng_elem.c) */
 #define ENGI_ACID (14u + FELUCCA_SLICE)    /* ACID (X0X's TB-303: eng_acid.c) */
 #define ENGI_JUNO (15u + FELUCCA_SLICE)    /* JUNO (FM-106's Juno-106 voice: eng_juno.c) */
+#define ENGI_ACIDMAX (16u + FELUCCA_SLICE) /* ACID MAX (MAIN MENU ACID: the 303 voice + shapes, wavetables and a tone stage: eng_acidmax.c) */
+#ifndef MM_ACID
+#define MM_ACID 0                /* 1: the MAIN MENU ACID firmware: every synth track is an ACID MAX (tools/build.py MM_ACID=1) */
+#endif
+#define AXN 32u                  /* ACID MAX: the engine's own parameters beyond P_E0..P_E7, a byte each (track_t.ax) */
 #define ENGI_FM6 9u              /* the FM6 engine's index (eng_fm6.c, the stores: append-only) */
 #define UP_SLOTS 32u             /* user presets (upreset.c) */
 #define NELEM(a) (sizeof(a) / sizeof((a)[0]))
@@ -159,6 +164,7 @@ typedef struct {
     uint8_t pat;                 /* sequence pattern (PATTERNS[pat - 1]), loaded only into an empty sequencer */
     int8_t x[8];                 /* more of the patch: up to 4 (track parameter id + 1, value) pairs, 0 = none
                                   * (glide, pitch / LFO modulation, voice mode...: preset_extras) */
+    const int8_t *ax;            /* ACID MAX: the values of the engine's own AXN parameters (0 = the engine's defaults) */
 } preset_t;
 #define FX(d, c, dl, r) .fx = {(d) + 1, (c) + 1, (dl) + 1, (r) + 1}
 #define ARP(m, rt, o, g) .arp = {(m) + 1, (rt) + 1, (o) + 1, (g) + 1}
@@ -193,6 +199,11 @@ typedef struct {
     int (*done)(struct track *t, voice_t *v);
     /* optional: once per block and part, after its voices, on their sum (JUNO: its chorus) */
     void (*post)(struct track *t, int32_t *out, uint32_t n);
+    /* ACID MAX: the parameters beyond EDIT 2, nax of them (<= AXN) in groups of four (the pages: ax_title[k] names
+     * page k), kept in track_t.ax. 0 / NULL for every other engine */
+    uint8_t nax;
+    const param_desc_t *ax;
+    const char *const *ax_title;
 } engine_t;
 
 /* ------------------------------------------------------------ track --- */
@@ -309,6 +320,7 @@ typedef struct track {
     /* engine switch (voice.c engine_block): the old engine's voices fade out, then it switches */
     uint8_t xf_on, xf;           /* fading; blocks of the fade still to render */
     int16_t pe_old[8];           /* P_E0..P_E7 of the sounding engine: the fade renders with these */
+    int8_t ax[AXN];              /* ACID MAX: the engine's own parameters beyond P_E7 (engine_t.ax); 0 for the others */
     int16_t p_old[P_COUNT];      /* 2.6: the whole sound before a preset loaded (voice.c sound_change): the fade's */
     uint8_t pold;                /* 1: a preset loaded, the sounding voices fade out with p_old first */
     uint16_t ins_res;            /* 2.6: |the INSERT's last output| (fx.c: its tail runs until it is ~0) */
