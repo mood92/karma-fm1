@@ -599,21 +599,27 @@ static void setlist_default(void)
         setlist[i] = (uint8_t)i;
     setlist_ready = 1;
 }
-/* a knob touched: its name and value in the message line for a moment (LIVE and HOME) */
-static void knob_popup(const param_desc_t *d, int16_t v)
+/* a knob touched: a box over the screen with its name, its value big and a gauge, for about 1.5 s (drawn by pop_draw,
+ * ui_draw.c; MAIN MENU: LIVE and HOME) */
+static struct {
+    char lab[12], val[14];
+    int32_t ratio;
+    uint8_t k, t;
+} pop;
+static void knob_popup(uint32_t k, const param_desc_t *d, int16_t v)
 {
-    char val[12], b[24];
+    char val[12];
     const char *unit;
     uint32_t n;
     param_format(d, v, val, &unit);
-    str_cpy(b, d->label, 12);
-    n = str_len(b);
-    b[n++] = ' ';
-    str_cpy(b + n, val, sizeof b - n);
-    n = str_len(b);
-    if (unit && unit[0] && n + 1u < sizeof b)
-        str_cpy(b + n, unit, sizeof b - n);
-    ui_message(b);
+    str_cpy(pop.lab, d->label, sizeof pop.lab);
+    str_cpy(pop.val, val, sizeof pop.val);
+    n = str_len(pop.val);
+    if (unit && unit[0] && n + 1u < sizeof pop.val)
+        str_cpy(pop.val + n, unit, sizeof pop.val - n);
+    pop.ratio = RATIO(d, v);
+    pop.k = (uint8_t)(k & 3u);
+    pop.t = 45;
 }
 /* the name of slot s's sound on the selected track (12 characters + 0 at b) */
 static void setlist_name(uint32_t s, char *b)

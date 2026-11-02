@@ -997,8 +997,33 @@ static void draw_columns_set(void)
 
 /* the UI's timers, once a frame whatever the screen (a message, the BPM highlight, an armed GO, the
  * white value of the knob just turned) */
+/* the knob pop-up (ui.c knob_popup): a bordered box in the knob's colour over the middle of the screen */
+static void pop_draw(void)
+{
+    uint16_t c = TE_COL[pop.k & 3u];
+    int32_t w = 176, h = 60, x, g;
+    if (!pop.t)
+        return;
+    cv_begin((uint32_t)w, (uint32_t)h, C_BLACK);
+    cv_rect(0, 0, w, 3, c);
+    cv_rect(0, h - 3, w, 3, c);
+    cv_rect(0, 0, 3, h, c);
+    cv_rect(w - 3, 0, 3, h, c);
+    cv_text(10, 7, &FONT_S, pop.lab, c);
+    x = (w - text_w(&FONT_L, pop.val)) / 2;
+    cv_text(x < 8 ? 8 : x, 20, &FONT_L, pop.val, C_WHITE);
+    cv_rect(10, h - 12, w - 20, 4, TE_G2);
+    if (pop.ratio >= 0) {
+        g = (w - 20) * pop.ratio / 1000;
+        cv_rect(10, h - 12, g < 1 ? 1 : g, 4, c);
+    }
+    cv_blit(32, 62);
+    if (!--pop.t)
+        ui.force = 1;                                   /* gone: the screen under it comes back */
+}
 static void ui_timers(void)
 {
+    pop_draw();
     if (ui.msg_t)
         ui.msg_t--;
     if (ui.bpm_t)
