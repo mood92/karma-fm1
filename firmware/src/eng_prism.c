@@ -317,7 +317,7 @@ static const preset_t PRISM_PRESETS[] = {
     /* noise riser -- a long rising filter sweep for transitions (longer and slower than NOISE SWEEP). */
     {"RISER", {18, 80, 30, 100, 110, 0, 0, 0}, {127, 60, 0, 10}, 0, 1, FX(0, 0, 10, 30)},
     /* rain/room-tone atmosphere -- a low, filtered noise drone for dub techno depth. */
-    {"RAIN AMBNT", {18, 20, 10, 40, 0, 0, 0, 0}, {80, 100, 127, 100}, 0, 0, FX(0, 10, 20, 50)},
+    {"RAIN AMBNT", {18, 30, 55, 30, 30, 0, 0, 0}, {80, 100, 127, 100}, 0, 0, FX(0, 10, 20, 50)},
     /* "echoing delay throw" -- a short simple chord (triad) meant to be caught by a long delay/reverb tail,
      * then muted; a performance patch more than a sustained sound. */
     {"STAB THROW", {4, 40, 20, 0, 0, 0, 0, 0}, {0, 20, 0, 10}, 0, 0, FX(0, 0, 90, 80)},
