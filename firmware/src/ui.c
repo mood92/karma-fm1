@@ -16,6 +16,7 @@ static int up_load(uint32_t k);
 static int up_load_to(track_t *t, uint32_t k);
 static uint32_t up_count(void);
 static int up_store(uint32_t k, const char *name);   /* MAIN MENU 1.2: live_key's STORE */
+static void knob_say(uint32_t k, const char *lab, const char *val);   /* MAIN MENU: browse_go's pop-up */
 static uint32_t up_nth(uint32_t n);
 static uint32_t up_rank(uint32_t slot);
 static uint32_t up_engine(uint32_t k);
@@ -65,6 +66,8 @@ static struct {
     uint8_t confirm;             /* 1 = "clear the sequence?" (REC held on SEQ / ARP), 2 = "clear track n?" (TRACKS) */
     uint8_t confirm_trk;         /* the track the dialog clears */
     uint8_t uslot;               /* SAVE > USER: the selected user preset slot */
+    uint8_t browse_kind;         /* MAIN MENU: PRESETS category tab, 0xFF = ALL, else a BK_* kind */
+    uint32_t browse_pos;         /* MAIN MENU: PRESETS list position within that tab's filtered list */
     /* layers (ui_layers.c): a function button held, the keys and knobs do something else */
     uint8_t layer;               /* the layer drawn (LY_*), LY_PLAY = none */
     uint8_t layer_btn;           /* its button (B_*), NB = none */
@@ -581,6 +584,49 @@ static uint32_t preset_at_of(const track_t *t, uint32_t n, uint32_t *k)
 static uint32_t preset_at(uint32_t n, uint32_t *k) { return preset_at_of(TSEL, n, k); }
 static uint32_t preset_list_idx(uint32_t n) { uint32_t x = pl_entry(TSEL, n); return x < NBANK ? x : NBANK; }
 static const char *preset_kind(uint32_t n) { uint32_t x = preset_list_idx(n); return x < NBANK ? BANK_KIND[BANK[x].kind] : "USER"; }
+
+/* MAIN MENU: PRESETS category tabs (ALL, then BK_BASS..BK_FX). ui.browse_kind: 0 = ALL, 1..8 = BK_* + 1
+ * (so the zero-initialized default at boot is ALL with no separate init needed). Factory sounds only --
+ * a tab narrows what's browsable, user presets still show up under ALL (same as the unfiltered list did). */
+#define BROWSE_TABS (8u + 1u)
+static const char *const BROWSE_TAB_LABEL[BROWSE_TABS] = {"ALL", "BASS", "KEYS", "ORGN", "PAD", "LEAD", "PLCK",
+                                                            "STAB", "FX"};
+static uint32_t browse_count(uint32_t tab)            /* factory BANK entries on TSEL's lane matching this tab */
+{
+    uint32_t i, c = 0;
+    if (!bank_ready)
+        bank_resolve();
+    for (i = 0; i < NBANK; i++)
+        if (eng_allowed(TSEL, BANK[i].e) && bank_pi[i] != 0xFFu && (!tab || BANK[i].kind == tab - 1u))
+            c++;
+    return c;
+}
+static uint32_t browse_entry(uint32_t n, uint32_t tab)   /* the n-th BANK index matching this tab, 0xFFFFu if none */
+{
+    uint32_t i, c = 0;
+    if (!bank_ready)
+        bank_resolve();
+    for (i = 0; i < NBANK; i++)
+        if (eng_allowed(TSEL, BANK[i].e) && bank_pi[i] != 0xFFu && (!tab || BANK[i].kind == tab - 1u)) {
+            if (c == n)
+                return i;
+            c++;
+        }
+    return 0xFFFFu;
+}
+static void browse_go(uint32_t n)                     /* load the n-th sound of the current tab onto TSEL */
+{
+    uint32_t i = browse_entry(n, ui.browse_kind);
+    char nm[13];
+    if (is_drum(TSEL) || i == 0xFFFFu)
+        return;
+    if (BANK[i].e != TSEL->eng_req)
+        select_engine(BANK[i].e);
+    apply_preset(bank_pi[i]);
+    ui.force = 1;
+    str_cpy(nm, BANK[i].name, sizeof nm);
+    knob_say(1u, "SOUND", nm);
+}
 
 /* list index n into track t (2.6: MIDI Program Change, any track); 0 done, 1 no such sound */
 static int preset_go_to(track_t *t, uint32_t n)

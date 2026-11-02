@@ -416,22 +416,27 @@ static void edit_param(uint32_t slot, int32_t steps)
         tracks_edit(slot, steps);
         return;
     }
-    if (pg->graph == GR_BROWSE) {                         /* KNOB 1: one preset, KNOB 2: the next / previous engine */
+    if (pg->graph == GR_BROWSE) {                         /* MAIN MENU: KNOB 1 scrolls the list, KNOB 2 the category
+                                                            * tab (ALL, then BK_BASS..BK_FX) */
         if (slot == 0u && !is_drum(TSEL)) {
-            uint32_t total, cur = preset_pos(&total);
-            if (total)
-                preset_go((uint32_t)(((int32_t)cur + steps % (int32_t)total + (int32_t)total) % (int32_t)total));
-        } else if (slot == 1u && !is_drum(TSEL)) {
-        {                                                 /* (the track's engines only: ACID <-> JUNO) */
-            uint32_t e = TSEL->eng_req, j;
-            for (j = 0; j < NENGINES; j++) {
-                e = (e + (steps > 0 ? 1u : NENGINES - 1u)) % NENGINES;
-                if (eng_allowed(TSEL, e))
-                    break;
+            if (ui.browse_kind) {
+                uint32_t total = browse_count(ui.browse_kind);
+                if (total) {
+                    ui.browse_pos = (uint32_t)(((int32_t)ui.browse_pos + steps % (int32_t)total + (int32_t)total) %
+                                                (int32_t)total);
+                    browse_go(ui.browse_pos);
+                }
+            } else {
+                uint32_t total, cur = preset_pos(&total);
+                if (total)
+                    preset_go((uint32_t)(((int32_t)cur + steps % (int32_t)total + (int32_t)total) % (int32_t)total));
             }
-            if (e != TSEL->eng_req)
-                select_engine(e);
-        }
+        } else if (slot == 1u && !is_drum(TSEL)) {
+            ui.browse_kind = (uint8_t)(((int32_t)ui.browse_kind + steps % (int32_t)BROWSE_TABS + (int32_t)BROWSE_TABS) %
+                                        (int32_t)BROWSE_TABS);
+            ui.browse_pos = 0;
+            if (ui.browse_kind && browse_count(ui.browse_kind))
+                browse_go(0);
         }
         return;
     }
@@ -1135,12 +1140,22 @@ static void ui_input(void)
     if ((s = panel_enc(EN_PRESET)) != 0 && (ui.home || cur_page()->graph == GR_BROWSE || cur_fam() == FAM_TRK)) {
         /* PRESETS browses the selected part's presets (all engines, then user presets) on HOME, the PRESETS
          * page and TRACKS only (the drum track: its kits); elsewhere a stray turn would throw away the sound
-         * being edited. Every detent counts */
-        uint32_t total, cur = preset_pos(&total);
-        if (is_drum(TSEL))
+         * being edited. Every detent counts. On the PRESETS page itself, a category tab (MAIN MENU) narrows
+         * this to that tab's own sounds; HOME and TRACKS always browse the full list regardless of the tab */
+        if (is_drum(TSEL)) {
             TDRUM->p[P_E0] = (int16_t)clamp(TDRUM->p[P_E0] + s, 0, DRUM_KITS - 1);
-        else if (total)
-            preset_go((uint32_t)(((int32_t)cur + s % (int32_t)total + (int32_t)total) % (int32_t)total));
+        } else if (cur_page()->graph == GR_BROWSE && ui.browse_kind) {
+            uint32_t total = browse_count(ui.browse_kind);
+            if (total) {
+                ui.browse_pos = (uint32_t)(((int32_t)ui.browse_pos + s % (int32_t)total + (int32_t)total) %
+                                            (int32_t)total);
+                browse_go(ui.browse_pos);
+            }
+        } else {
+            uint32_t total, cur = preset_pos(&total);
+            if (total)
+                preset_go((uint32_t)(((int32_t)cur + s % (int32_t)total + (int32_t)total) % (int32_t)total));
+        }
     }
     if ((s = panel_enc(EN_ALGO)) != 0 && !ft_on)     /* ALGORITHM: the selected track, on every page (not in a take) */
         track_select((uint32_t)clamp((int32_t)song.sel + (s > 0 ? 1 : -1), 0, NPART - 1));
