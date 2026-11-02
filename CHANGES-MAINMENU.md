@@ -35,6 +35,19 @@ by or supported by Hügelton Instruments, M-VAVE, or any of the third-party proj
   fork's changes, a couple of pre-existing heap-overflow bugs in the shared host harness) and new
   tests covering the LIVE setlist's behaviour and its flash persistence.
 
+## MAIN MENU ACID (branch `acid-max`, 2026-11-02)
+
+A separate firmware built from the same tree with `MM_ACID=1` (workflow `build-acid.yml` -> `MainMenu-AcidMax.fwsc`):
+all three synth tracks are **ACID MAX**, a new engine (`firmware/src/eng_acidmax.c`, `acid303.c`) built on the Open303 voice
+already in ACID: ten oscillator shapes (saw, square, MORPH, FOLD, FORMANT, five generated wavetables) with POSITION and
+MOTION, ladder filter, accent, slide (CLASSIC / ENHANCED), then BUZZ, DRIVE (6 kinds), CHARACTER (6 modes, BASS / BRIGHT,
+DRIFT), NOTCH MOTION, HI-END and COMPRESSION, with 34 factory presets of its own. Chorus, delay and reverb are the tracks'
+sends into the shared FX buses. The engine's extra parameters (beyond EDIT 1 / 2) are on the new EDIT > MORE pages
+(`track_t.ax`); they are kept in projects (in the hidden drum track's step area), in user presets and in the LIVE setlist
+(in the record's pattern bytes), so no stored format changed size. ACID GEN has ten scales and, on ACID GEN 3, NOTES /
+ACCENTS / SLIDES buttons that roll one kind again. Not affiliated with Kamino; no code, presets or art of the Acid Max
+plug-in are used.
+
 ## Files touched
 
 See `git log 7d2560b..HEAD` in this repository for the exact commit-by-commit history (base commit

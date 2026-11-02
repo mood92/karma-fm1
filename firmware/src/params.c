@@ -74,7 +74,7 @@ static const char *const N_HXWAV2[] = {"SI/SI", "SI/TR", "SI/SA", "SI/SQ", "SI/N
                                        "TR/SQ", "TR/NO", "TR/PW", "SA/SI", "SA/TR", "SA/SA", "SA/SQ", "SA/NO", "SA/PW",
                                        "SQ/SI", "SQ/TR", "SQ/SA", "SQ/SQ", "SQ/NO", "SQ/PW", "NO/SI", "NO/TR", "NO/SA",
                                        "NO/SQ", "NO/NO", "NO/PW", "PW/SI", "PW/TR", "PW/SA", "PW/SQ", "PW/NO", "PW/PW"};
-static const char *const N_AGSCALE[] = {"MIN", "PHRY", "HARM", "MPEN", "DOR", "MAJ"};   /* ACID GEN: TB-3PO's scales */
+static const char *const N_AGSCALE[] = {"MIN", "PHRY", "HARM", "MPEN", "DOR", "MAJ", "CHRO", "BLUE", "MIXO", "LOCR"};   /* ACID GEN: TB-3PO's scales */
 static const char *const N_SLCR[] = {"OFF", "GATE", "STUT"};             /* SL_OFF .. SL_STUT (slicer.c) */
 static const char *const N_SLDIV[] = {"1/8", "1/16", "1/32", "8T", "16T", "32T"};   /* SL_DEN */
 static const char *const N_CHORD[] = {"OFF", "TRIAD", "7TH", "9TH", "SUS4", "POWER"};   /* seq.c CHORD_DEG */
@@ -267,6 +267,9 @@ static const param_desc_t GP[G_COUNT] = {
     [G_GKMODE] = PE("MODE", N_GKMODE, 0),
     [G_GKPROG] = PE("PROG", N_GKPROG, 1),
     [G_GKBARS] = PE("BARS", N_GKBARS, 1),
+    [G_AGRNOTE] = PE("NOTES", N_GO, 0),           /* ACID GEN 3: roll only the notes / accents / slides again */
+    [G_AGRACC] = PE("ACCENTS", N_GO, 0),
+    [G_AGRSLD] = PE("SLIDES", N_GO, 0),
     [G_DGMODE] = PE("MODE", N_DGMODE, 0),           /* SEQ > DRUM GEN (gen_seq.c) */
     [G_DGX] = PD("MAP X", F_INT, 0, 127, 64),
     [G_DGY] = PD("MAP Y", F_INT, 0, 127, 64),
@@ -531,6 +534,7 @@ static const page_t PAGES[] = {
     {"PLAY", FAM_SEQ, SC_GLOBAL, GR_NONE, {G_PLDIR, G_PLCHN, G_PLJMP, G_PLSTR}},   /* the order steps play in, chance */
     {"ACID GEN", FAM_SEQ, SC_GLOBAL, GR_NONE, {G_AGDENS, G_AGACC, G_AGSLD, G_AGSEED}},     /* TB-3PO's lines into the */
     {"ACID GEN 2", FAM_SEQ, SC_GLOBAL, GR_NONE, {G_AGSCALE, G_AGOCT, G_AGROOT, G_AGMUT}},  /* track (acid_gen.c) */
+    {"ACID GEN 3", FAM_SEQ, SC_GLOBAL, GR_NONE, {G_AGRNOTE, G_AGRACC, G_AGRSLD, 0xFF}},   /* (ACID MAX: roll one kind) */
     {"GEN", FAM_SEQ, SC_GLOBAL, GR_ROLL, {G_GNON, G_GNCHG, G_GNDENS, G_GNRANGE}},   /* a loop that changes as */
     {"GEN 2", FAM_SEQ, SC_GLOBAL, GR_ROLL, {G_GNOCT, G_GNACC, G_GNSLD, G_GNNEW}},    /* it plays (gen_seq.c) */
     {"HARMONY", FAM_SEQ, SC_GLOBAL, GR_ROLL, {G_GKROOT, G_GKMODE, G_GKPROG, G_GKBARS}},   /* the key, the chords */
@@ -564,7 +568,7 @@ static int page_shown(const page_t *pg)
     if (pg->fam == FAM_EDIT && is_drum(TSEL))
         return 0;
     if (pg->scope == SC_GLOBAL && (pg->id[0] == G_GNON || pg->id[0] == G_GNOCT || pg->id[0] == G_GKROOT || pg->id[0] == G_AGDENS ||
-                                   pg->id[0] == G_AGSCALE))
+                                   pg->id[0] == G_AGSCALE || pg->id[0] == G_AGRNOTE))
         return !is_drum(TSEL);                       /* GEN, ACID GEN: the synth tracks' */
     if (pg->graph == GR_DGEN)
         return is_drum(TSEL);                        /* DRUM GEN: the drum track's */

@@ -9,8 +9,8 @@
  * ROOT, MUTATE (GO: a quarter of the steps rolled again). A knob turned writes the line at once, over the track's
  * PATTERN length; the first one after the page opens keeps the pattern that was there for UNDO. The settings
  * belong to the FM-1, not to a project: the line they made is the track's pattern, and that is kept. */
-#define AG_NSCALES 6
-typedef struct { int8_t deg[7]; uint8_t len; } ag_scale_t;
+#define AG_NSCALES 10
+typedef struct { int8_t deg[12]; uint8_t len; } ag_scale_t;
 static const ag_scale_t AG_SCALES[AG_NSCALES] = {    /* schwung-tb3po's SCALES, same order */
     {{0, 2, 3, 5, 7, 8, 10}, 7},                     /* Minor */
     {{0, 1, 3, 5, 7, 8, 10}, 7},                     /* Phrygian */
@@ -18,6 +18,10 @@ static const ag_scale_t AG_SCALES[AG_NSCALES] = {    /* schwung-tb3po's SCALES, 
     {{0, 3, 5, 7, 10, 0, 0}, 5},                     /* MinPent */
     {{0, 2, 3, 5, 7, 9, 10}, 7},                     /* Dorian */
     {{0, 2, 4, 5, 7, 9, 11}, 7},                     /* Major */
+    {{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11}, 12},   /* Chromatic (ACID MAX parity, 2026-11: the four after TB-3PO's six) */
+    {{0, 3, 5, 6, 7, 10}, 6},                        /* Blues */
+    {{0, 2, 4, 5, 7, 9, 10}, 7},                     /* Mixolydian */
+    {{0, 1, 3, 5, 6, 8, 10}, 7},                     /* Locrian */
 };
 typedef struct {
     uint8_t density, accent, slide;                  /* probabilities 0..100 % */
@@ -143,6 +147,33 @@ static void ag_mutate(track_t *t, const ag_cfg_t *g, int len, uint32_t *rng)
     *rng = r;
 }
 
+/* ACID MAX's "randomize notes / accents / slides" one at a time: only that part of the line is rolled again */
+static void ag_reroll(track_t *t, const ag_cfg_t *g, int len, uint32_t *rng, int what)   /* 0 notes, 1 accents, 2 slides */
+{
+    const ag_scale_t *sc = &AG_SCALES[g->scale < AG_NSCALES ? g->scale : 0];
+    int range = clamp(g->oct_range, 1, 3), i;
+    uint32_t r = *rng ? *rng : (g->seed ? g->seed : 1);
+    len = clamp(len, 1, NSTEP);
+    for (i = 0; i < len; i++) {
+        step_t *s = &t->step[i];
+        uint8_t k = ag_kind_of(s);
+        if (k == AG_REST)
+            continue;
+        if (what == 0) {
+            int deg = (i % 4 == 0 && ag_rng_f(&r) < 0.35f) ? 0 : ag_degree(&r, sc), oct = ag_oct(&r, range);
+            s->note[0] = ag_note(g, deg, oct);
+        } else if (what == 1) {
+            int on = ag_rng_f(&r) < (float)g->accent / 100.0f;
+            s->flags = (uint8_t)((s->flags & ~SF_ACCENT) | (on ? SF_ACCENT : 0u));
+        } else {
+            int on = ag_rng_f(&r) < (float)g->slide / 100.0f;
+            s->flags = (uint8_t)((s->flags & ~SF_SLIDE) | (on ? SF_SLIDE : 0u));
+        }
+    }
+    ag_fix_slides(t, len);
+    *rng = r;
+}
+
 /* the page's knobs -> the selected synth track's line, once a frame (ui_studio.c pads_tick) */
 static void acid_gen_sync(void)
 {
@@ -152,6 +183,10 @@ static void acid_gen_sync(void)
     const int16_t *g = song.g;
     const char *ti = cur_page()->title, *pre = "ACID GEN";
     uint32_t i, open = !ui.home && song.sel < NPART, changed = 0, mut = 0;
+    int reroll = -1;
+    for (i = 0; i < 3u; i++)                         /* ACID GEN 3: NOTES / ACCENTS / SLIDES (GO, back to 0) */
+        if (g[G_AGRNOTE + i] && open)
+            reroll = (int)i;
     for (i = 0; pre[i] && open; i++)                 /* (its two pages: the titles start so) */
         open = ti[i] == pre[i];
     for (i = 0; i < 8u; i++) {
@@ -166,6 +201,8 @@ static void acid_gen_sync(void)
     if (open && !open_was)
         undo_sess++;                                 /* (the first line written here keeps the old pattern for UNDO) */
     open_was = (uint8_t)open;
+    if (reroll >= 0)
+        mut = 2;
     if (!open || (!changed && !mut))
         return;
     {
@@ -181,7 +218,10 @@ static void acid_gen_sync(void)
         c.root = (uint8_t)g[G_AGROOT];
         c.base_oct = 2;                              /* C2.. (TB-3PO's: C1; a bass track transposes as it likes) */
         undo_mark(t, undo_sess);
-        if (mut) {
+        if (reroll >= 0) {
+            ag_reroll(t, &c, len, &mut_rng, reroll);
+            song.g[G_AGRNOTE + reroll] = 0;
+        } else if (mut) {
             ag_mutate(t, &c, len, &mut_rng);
             song.g[G_AGMUT] = 0;
             was[7] = 0;

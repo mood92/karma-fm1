@@ -121,6 +121,8 @@ enum {                          /* global parameters */
     G_KNOBS,                                /* GLO > MIDI 3: CC 70-77 the EDIT knobs, or the GM map (a setting of the FM-1) */
     G_GKROOT, G_GKMODE, G_GKPROG, G_GKBARS, /* SEQ > HARMONY (gen_seq.c): KEY MODE as track 1's ROOT SCL (ui_studio.c gen_ui_sync), */
                                             /* PROG BARS the FM-1's, not in a project */
+    G_AGRNOTE, G_AGRACC, G_AGRSLD,          /* SEQ > ACID GEN 3 (acid_gen.c, ACID MAX parity): GO buttons that roll only the notes, the */
+                                            /* accents or the slides of the line again; the FM-1's, not in a project */
     G_COUNT
 };
 
