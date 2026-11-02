@@ -1,0 +1,57 @@
+# MAIN MENU ACID: the separate firmware with three ACID MAX tracks (MM_ACID=1). Same toolchain as build.yml.
+# Run it by hand (Actions tab > build-acid > Run workflow) or push to the acid-max branch. The package is in the
+# run's "Artifacts" box: MainMenu-AcidMax.fwsc. GPL-3.0-only, as the rest of the repo.
+name: build-acid
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [acid-max]
+    paths: ['firmware/**', 'tools/**', 'assets/**', 'build.sh', '.github/workflows/build-acid.yml']
+
+jobs:
+  firmware:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
+      - name: Python packages
+        run: python3 -m pip install Pillow
+
+      - name: JieLi toolchain (pkgman.jieliapp.com)
+        run: sh tools/get_toolchain.sh
+
+      - name: JieLi AC79 SDK (three files of it go into the package)
+        run: |
+          for i in 1 2 3; do
+            git clone --depth 1 --branch AC79NN_SDK_V1.2.1_2023-12-13 \
+                https://gitee.com/Jieli-Tech/fw-AC79_AIoT_SDK.git ~/fw-AC79_AIoT_SDK && break
+            rm -rf ~/fw-AC79_AIoT_SDK
+            sleep 20
+          done
+          test -d ~/fw-AC79_AIoT_SDK
+
+      - name: Host check (ACID MAX oscillators, project and user-preset persistence)
+        run: |
+          mkdir -p build/host build/gen
+          python3 tools/gen_tables.py build/gen/felucca_tables.h
+          cc -O1 -ffp-contract=off -w -Ifirmware/src -o build/host/acidmax_osc_test tests/acidmax_osc_test.c -lm
+          build/host/acidmax_osc_test
+
+      - name: Build
+        run: MM_ACID=1 sh build.sh
+
+      - name: Name the package
+        run: |
+          mkdir -p out
+          cp build/mainmenu-acid.fwsc out/MainMenu-AcidMax.fwsc
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: MainMenu-AcidMax
+          path: out/MainMenu-AcidMax.fwsc
+          if-no-files-found: error

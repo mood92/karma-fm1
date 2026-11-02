@@ -223,13 +223,14 @@ def build_plx():
 def build_app():
     flags = [*CFLAGS, *FPU, "-Ifirmware/hal", "-Ifirmware/src", "-Ibuild/gen"]
     for flag in ("FELUCCA_FLASH", "FELUCCA_OTA", "FELUCCA_OTA_DRYRUN", "FELUCCA_CDC", "FELUCCA_UART",
-                 "FELUCCA_ICONS", "FELUCCA_SLICE", "FM1_AUDIO_RX_CLOCK", "KARMA_DUAL_CORE"):
+                 "FELUCCA_ICONS", "FELUCCA_SLICE", "FM1_AUDIO_RX_CLOCK", "KARMA_DUAL_CORE", "MM_ACID"):
         v = os.environ.get(flag)    # unset: the default in firmware/src/felucca.c
         if v in ("0", "1"):
             flags.append(f"-D{flag}={v}")
     flags.append(f'-DFELUCCA_ID="{PRODUCT}"')
-    if VERSION:
-        flags.append(f'-DFELUCCA_VERSION="{VERSION}"')
+    ver = "MAIN MENU ACID 0.1" if os.environ.get("MM_ACID") == "1" and VERSION == "MAIN MENU LP 0.1" else VERSION
+    if ver:     # (MM_ACID=1: the separate ACID MAX firmware, tracks 1..3 all ACID MAX)
+        flags.append(f'-DFELUCCA_VERSION="{ver}"')
     tc_all(("cc", *[f for f in flags if f.startswith("-DKARMA_DUAL_CORE=")], "-c", FW / "crt0.S", "-o", OUT / "crt0.o"),
            ("cc", "-c", FW / "hal" / "fm1_vec.S", "-o", OUT / "fm1_vec.o"),
            ("cc", "-c", FW / "hal" / "fm1_isr.S", "-o", OUT / "fm1_isr.o"),
@@ -392,7 +393,7 @@ def main():
     pkg = fm1pkg_make.ufw(fm1pkg_make.flash_image(img, fm1pkg_make.KEY), ota, PRODUCT)
     (OUT / name).write_bytes(pkg)
     if not a.release:               # the same package by the firmware's name (felucca.fwsc stays for the tests/tools)
-        karma = "karma-rxclock.fwsc" if os.environ.get("FM1_AUDIO_RX_CLOCK", "0") not in ("", "0") else "karma.fwsc"
+        karma = "mainmenu-acid.fwsc" if os.environ.get("MM_ACID") == "1" else "karma-rxclock.fwsc" if os.environ.get("FM1_AUDIO_RX_CLOCK", "0") not in ("", "0") else "karma.fwsc"
         if os.environ.get("KARMA_DUAL_CORE", "") == "0":
             karma = karma.replace(".fwsc", "-single.fwsc")   # (one core: its own name; dual core is the default)
         (OUT / karma).write_bytes(pkg)
