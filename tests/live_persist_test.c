@@ -133,6 +133,7 @@ int main(void)
     }
     check(def_ok, "an old-format (1 byte/slot) object is not reinterpreted: setlist falls back to setlist_default()");
 
+#if !MM_ACID
     {   /* REVIEW-PLAN.md 1.2: STORE keeps the lane's live tweaks (not just a preset reference), by
          * snapshotting them into the setlist slot's own reserved user preset (upreset.c) */
         uint32_t s2 = 2, up_k = LIVE_UP_BASE + s2;
@@ -150,6 +151,30 @@ int main(void)
         live_key(s2);                                /* recall (live_store is 0 now) */
         check(trk[0].p[P_DIST] == 77, "RECALL restores the stored tweak exactly (not just the bare preset)");
     }
+#endif
+#if MM_ACID
+    {   /* ACID MAX: its own parameters (track_t.ax) ride in the user preset's pattern bytes and come back with the sound */
+        uint32_t s3 = 3, up_k = LIVE_UP_BASE + s3, i;
+        int same = 1;
+        track_select(0);
+        trk[0].eng_req = ENGI_ACIDMAX;
+        apply_preset_to(&trk[0], 5);
+        trk[0].ax[AX_DRV] = 77;
+        trk[0].ax[AX_BZFREQ] = 33;
+        trk[0].ax[AX_FINE] = -20;
+        live_store = 1;
+        live_key(s3);
+        trk[0].ax[AX_DRV] = 0;
+        trk[0].ax[AX_BZFREQ] = 0;
+        trk[0].ax[AX_FINE] = 0;
+        live_key(s3);
+        for (i = 0; i < AXN; i++)
+            if (i != AX_DRV && i != AX_BZFREQ && i != AX_FINE && trk[0].ax[i] != ENGINES[ENGI_ACIDMAX]->presets[5].ax[i])
+                same = 0;
+        check(up_used(up_k) && trk[0].ax[AX_DRV] == 77 && trk[0].ax[AX_BZFREQ] == 33 && trk[0].ax[AX_FINE] == -20 && same,
+              "ACID MAX: STORE / RECALL brings back every engine-own parameter (ax) too");
+    }
+#endif
     {   /* 1.2: a manual SAVE / ERASE on a slot reserved for the setlist is refused, not allowed to pull
          * the sound out from under it */
         uint32_t up_k = LIVE_UP_BASE + 2u;

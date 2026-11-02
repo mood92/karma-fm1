@@ -202,6 +202,34 @@ static void up_slot_label(char *b, uint32_t k)  /* "U07" */
     b[3] = 0;
 }
 
+/* ACID MAX's own parameters (track_t.ax, 28 bytes) ride in the record's pattern bytes (note[16] + flags[16]: it stores no
+ * pattern, LIVE never loads one), so the record keeps its size and the banks already in flash stay valid */
+#define UP_AXB 28u
+static void up_ax_pack(up_rec_t *r, const track_t *t)
+{
+    uint32_t i;
+    for (i = 0; i < UP_AXB; i++) {
+        uint8_t b = (uint8_t)(int8_t)clamp(t->ax[i], -128, 127);
+        if (i < 16u)
+            r->note[i] = b;
+        else
+            r->flags[i - 16u] = b;
+    }
+}
+static void up_ax_unpack(const up_rec_t *r, track_t *t)
+{
+    const engine_t *e = ENGINES[r->engine % NENGINES];
+    uint32_t i;
+    for (i = 0; i < AXN; i++) {
+        if (i >= e->nax || i >= UP_AXB) {
+            t->ax[i] = 0;
+        } else {
+            int8_t b = (int8_t)(i < 16u ? r->note[i] : r->flags[i - 16u]);
+            t->ax[i] = (int16_t)clamp(b, e->ax[i].min, e->ax[i].max);
+        }
+    }
+}
+
 /* the selected part's sound -> slot k; name 0 or "": engine name + slot number ("ANALOG 07").
  * 1 = the drum track is selected (it has no sound to store) */
 static int up_store(uint32_t k, const char *name)
@@ -229,7 +257,10 @@ static int up_store(uint32_t k, const char *name)
     }
     for (i = 0; i < P_COUNT; i++)
         r.p[i] = TSEL->p[i];
-    up_pat_from(&r, TSEL->step);
+    if (TSEL->eng_req == ENGI_ACIDMAX)
+        up_ax_pack(&r, TSEL);                             /* (ACID MAX: its own bytes in the pattern's place) */
+    else
+        up_pat_from(&r, TSEL->step);
     return up_put(k, &r);
 }
 
@@ -258,6 +289,7 @@ static int up_load_to(track_t *t, uint32_t k)       /* user preset k into track 
     for (i = 0; i < P_COUNT; i++)
         t->p[i] = v[i];
     t->preset = 0;
+    up_ax_unpack(r, t);
     fm1_irq_on();
     t->user = (uint8_t)(k + 1u);
     if (t == TSEL)
