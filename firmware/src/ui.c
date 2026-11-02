@@ -15,6 +15,7 @@ static int up_used(uint32_t k);              /* user presets: upreset.c */
 static int up_load(uint32_t k);
 static int up_load_to(track_t *t, uint32_t k);
 static uint32_t up_count(void);
+static int up_store(uint32_t k, const char *name);   /* MAIN MENU 1.2: live_key's STORE */
 static uint32_t up_nth(uint32_t n);
 static uint32_t up_rank(uint32_t slot);
 static uint32_t up_engine(uint32_t k);
@@ -538,6 +539,17 @@ static uint32_t pl_total(const track_t *t)
         c += eng_allowed(t, up_engine(up_nth(i)));
     return c;
 }
+/* MAIN MENU: the n (list position on track t) whose pl_entry is id; 0xFFFFu if t's list (its lane's allowed
+ * engines) does not currently hold that id -- a factory id always will once track_select has put t on the
+ * id's own stored lane (setlist_lane); a user preset id could still miss if it was since deleted */
+static uint32_t pl_find(const track_t *t, uint32_t id)
+{
+    uint32_t n, tot = pl_total(t);
+    for (n = 0; n < tot; n++)
+        if (pl_entry(t, n) == id)
+            return n;
+    return 0xFFFFu;
+}
 static uint32_t preset_pos(uint32_t *total)          /* list index of the selected track's preset */
 {
     uint32_t n, tot = pl_total(TSEL), cur = 0;
@@ -585,18 +597,32 @@ static int preset_go_to(track_t *t, uint32_t n)
     ui.force = 1;
     return 0;
 }
-/* LIVE SETLIST: 20 slots, each a list index of the PRESETS list (as preset_go_to takes it). The LIVE layer (hold
- * LFO) turns the keys into the slots; MIDI Program Change 0..19 picks a slot (pc_poll) */
+static void track_select(uint32_t i);                /* forward (defined below): live_key/pc_poll jump lanes */
+/* LIVE SETLIST: 20 slots. MAIN MENU: each slot is a stable sound id (pl_entry's: a BANK index < NBANK, or
+ * NBANK + a user preset slot; 0xFF = empty) and the lane it belongs to (0..NPART-1) -- not a list position,
+ * which means a different sound on every lane (lanes each allow different engines: eng_allowed). Recall
+ * always jumps to the slot's own lane first, then finds that sound in the new lane's own list (pl_find).
+ * The LIVE layer (hold LFO) turns the keys into the slots; MIDI Program Change 0..19 picks a slot (pc_poll) */
 #define SETLIST_N 20u
-static uint8_t setlist[SETLIST_N];
-static uint8_t live_slot = 0xFF;                     /* the slot last recalled (0xFF none) */
+#define LIVE_UP_BASE (UP_SLOTS - SETLIST_N)       /* MAIN MENU 1.2: one user preset slot reserved per setlist
+                                                    * slot (the top SETLIST_N of UP_SLOTS), so STORE can keep
+                                                    * whatever knob / FX / ADSR tweaks the lane has now */
+static uint8_t setlist_id[SETLIST_N];                /* pl_entry's stable id; 0xFF = empty slot */
+static uint8_t setlist_lane[SETLIST_N];              /* which lane (0..NPART-1) the id above means */
+static uint8_t live_slot[NPART] = {0xFF, 0xFF, 0xFF};   /* each lane's last-recalled slot (0xFF none) */
 static uint8_t setlist_ready;
 static uint8_t live_store;                           /* OCT+ tapped in LIVE: the next slot key stores */
+static uint16_t live_store_t;                        /* MAIN MENU: ticks (ms/16) left before STORE disarms itself */
+#define LIVE_STORE_MS 5000u
 static void setlist_default(void)
 {
     uint32_t i;
-    for (i = 0; i < SETLIST_N; i++)
-        setlist[i] = (uint8_t)i;
+    for (i = 0; i < SETLIST_N; i++) {
+        uint32_t lane = i % NPART;
+        setlist_lane[i] = (uint8_t)lane;
+        setlist_id[i] = (uint8_t)pl_entry(&trk[lane], i / NPART);   /* a reasonable factory default: walk
+                                                                      * each lane's own sounds in turn */
+    }
     setlist_ready = 1;
 }
 /* a knob touched: a box over the screen with its name, its value big and a gauge, for about 1.5 s (drawn by pop_draw,
@@ -639,13 +665,22 @@ static void list_name(uint32_t n, char *b)
     else if (x != 0xFFFFu)
         up_name(x - NBANK, b);
 }
-static void setlist_name(uint32_t s, char *b) { list_name(setlist[s % SETLIST_N], b); }
+/* MAIN MENU: a stable id's name directly (setlist_id is a global id, not a list position: list_name's
+ * pl_entry(TSEL, n) indirection does not apply) */
+static void id_name(uint32_t id, char *b)
+{
+    b[0] = 0;
+    if (id < NBANK)
+        str_cpy(b, BANK[id].name, 13);
+    else if (id != 0xFFu)
+        up_name(id - NBANK, b);
+}
+static void setlist_name(uint32_t s, char *b) { id_name(setlist_id[s % SETLIST_N], b); }
 /* a slot key (the LIVE layer): recall the slot's sound on the selected track; with OCT+ held, store the sound
  * the track has now into the slot instead */
 static void live_key(uint32_t s)
 {
-    uint32_t tot;
-    char b[4];
+    char b[4], nb[20], nm[13];
     if (s >= SETLIST_N)
         return;
     if (!setlist_ready)
@@ -656,18 +691,43 @@ static void live_key(uint32_t s)
         return;
     }
     if (live_store || ((fm1_in.buttons >> panel.btn[B_OCTUP]) & 1u)) {
+        uint32_t k = LIVE_UP_BASE + s;                /* MAIN MENU 1.2: this slot's own reserved user preset */
+        int rc;
         live_store = 0;
-        setlist[s] = (uint8_t)preset_pos(&tot);
-        settings_later = 1;                          /* (saved with the settings, once stopped) */
-        ui_say("STORED SLOT ", b);
+        live_store_t = 0;
+        rc = up_store(k, 0);                          /* snapshot the lane's sound now, tweaks and all */
+        if (rc == 2) {                                /* flash error: nothing changed, say so and stop */
+            ui_message("SAVE ERROR");
+            return;
+        }
+        setlist_id[s] = (uint8_t)(NBANK + k);
+        setlist_lane[s] = (uint8_t)song.sel;
+        settings_later = 1;                          /* the slot's own (id, lane) bytes: with the settings, once stopped */
+        str_cpy(nb, b, sizeof nb);                    /* MAIN MENU 1.9: "STORED SLOT n NAME", not just the number */
+        str_cpy(nb + str_len(nb), " ", sizeof nb - str_len(nb));
+        setlist_name(s, nm);
+        str_cpy(nb + str_len(nb), nm, sizeof nb - str_len(nb));
+        ui_say("STORED SLOT ", nb);
         return;
     }
-    if (preset_go_to(TSEL, setlist[s])) {
+    if (setlist_id[s] == 0xFFu) {
         ui_say("EMPTY SLOT ", b);
         return;
     }
-    live_slot = (uint8_t)s;
-    ui_say("SLOT ", b);
+    track_select(setlist_lane[s]);                   /* MAIN MENU: recall always jumps to the slot's own lane */
+    {
+        uint32_t n = pl_find(TSEL, setlist_id[s]);
+        if (n == 0xFFFFu || preset_go_to(TSEL, n)) {
+            ui_say("EMPTY SLOT ", b);
+            return;
+        }
+    }
+    live_slot[song.sel] = (uint8_t)s;
+    str_cpy(nb, b, sizeof nb);                        /* MAIN MENU 1.9: "SLOT n NAME", not just the number */
+    str_cpy(nb + str_len(nb), " ", sizeof nb - str_len(nb));
+    setlist_name(s, nm);
+    str_cpy(nb + str_len(nb), nm, sizeof nb - str_len(nb));
+    ui_say("SLOT ", nb);
 }
 /* MIDI Program Change (2.6, after Felucca 1.5.1, PR #179 by @renebohne): seq.c queues it per track (the track its
  * channel plays, GLO > MIDI); here, in the main loop (a flash read, a sound loaded): a synth track takes the n-th sound
@@ -683,23 +743,33 @@ static void pc_poll(void)
             continue;
         pc_req[i] = 0;
         n = r - 1u;
-        if (!is_drum(&trk[i])) {                       /* LIVE: the program is a setlist slot */
+        if (!is_drum(&trk[i])) {                       /* LIVE: the program is a setlist slot (MAIN MENU: it
+                                                         * always jumps to the slot's own lane, which may not
+                                                         * be track i -- the MIDI channel that sent it) */
             if (n >= SETLIST_N)
                 continue;
             if (!setlist_ready)
                 setlist_default();
-            live_slot = (uint8_t)n;
-            n = setlist[n];
-        }
-        if (is_drum(&trk[i])) {
-            if (n >= DRUM_KITS)
+            if (setlist_id[n] == 0xFFu)
                 continue;
-            trk[i].p[P_E0] = (int16_t)n;
-            if (&trk[i] == TSEL)
-                sync_reload = 1;
-        } else if (preset_go_to(&trk[i], n)) {
+            track_select(setlist_lane[n]);
+            {
+                uint32_t p = pl_find(TSEL, setlist_id[n]);
+                if (p == 0xFFFFu || preset_go_to(TSEL, p))
+                    continue;
+            }
+            live_slot[song.sel] = (uint8_t)n;
+            str_cpy(b, "SLOT ", sizeof b);
+            fmt_int(b + 5, (int32_t)n + 1);
+            ui_message(b);
+            ui.force = 1;
             continue;
         }
+        if (n >= DRUM_KITS)
+            continue;
+        trk[i].p[P_E0] = (int16_t)n;
+        if (&trk[i] == TSEL)
+            sync_reload = 1;
         str_cpy(b, "T1 PROG ", sizeof b);
         b[1] = (char)('1' + i);
         fmt_int(b + 8, (int32_t)n);

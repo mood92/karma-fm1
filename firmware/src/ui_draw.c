@@ -1014,6 +1014,10 @@ static void ui_timers(void)
         ui.arm = 0;
     if (ui.hot_t)
         ui.hot_t--;
+    if (live_store_t && !--live_store_t) {        /* MAIN MENU: STORE left armed too long: disarm it */
+        live_store = 0;
+        ui_message("STORE OFF");
+    }
 }
 
 static void vis_draw(void);                     /* ui_vis.c */

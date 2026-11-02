@@ -50,8 +50,12 @@ SDK_SHA256 = {
     "cfg/eq_cfg_hw.bin": "41167491bffed4651750719c973d2758adeb9021a5670d02d6a53c85ed80ea7d",
 }
 
-PRODUCT = "FM-1_926"                # package identity: KARMA's own on the Firmware Hub (2026-10-30; was Felucca's 900)
-VERSION = None                      # FELUCCA_VERSION for release builds (default: firmware/src/ui.c)
+PRODUCT = "FM-1_926"                 # package identity: KARMA's own on the Firmware Hub (2026-10-30; was Felucca's 900)
+                                      # MAIN MENU: left as is pending a check of what the Firmware Hub and a real
+                                      # device key on it for -- tests/ota_test.c and tests/ldr_test.c hardcode
+                                      # their own FELUCCA_ID and do not depend on this value either way
+VERSION = "MAIN MENU LP 0.1"         # FELUCCA_VERSION for release builds (ui.c's own "KARMA 3.0.3" is the
+                                      # fallback for a build that does not set this, e.g. a local ./build.sh)
 
 
 def toolchain():

@@ -76,6 +76,7 @@ int main(void)
     }
     host_tracks_init();
     song.g[G_BPM] = 120;
+    song.g[G_DRLVL] = 100;                               /* MAIN MENU: defaults to 0 (drum track hidden) */
     song.g[G_DRREV] = 0;                                 /* (no reverb tail between the checks) */
     slot_build(0, notes, lens, 4);
     check(usr_nz[0] == 4u && !usr_nz[1], "USR1 read by smp_user_scan: 4 zones; USR2 empty");

@@ -30,6 +30,7 @@ int main(void)
     double dry_snare, dry_kick, wet_snare, kick_after, dly_hat, hat_dry;
     host_tracks_init();
     TDRUM->p[P_E0] = DRUM_DEFAULT_KIT;
+    song.g[G_DRLVL] = 100;   /* MAIN MENU: defaults to 0 (drum track hidden); drive the engine audibly here */
     song.g[G_DRREV] = 0; song.g[G_DRDLY] = 0;
     for (l = 0; l < DRUM_LANES; l++) { drum_send[l][0] = (uint8_t)((l * 5u + 3u) % 16u); drum_send[l][1] = (uint8_t)((l * 3u + 1u) % 8u); }
     proj_capture(&p);

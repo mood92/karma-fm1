@@ -82,6 +82,7 @@ static void setup(void)
 {
     uint32_t i;
     host_tracks_init();
+    song.g[G_DRLVL] = 100;   /* MAIN MENU: defaults to 0 (drum track hidden); drive it audibly here */
     memset(ins, 0, sizeof ins);
     for (i = 0; i < NTRK; i++) {
         trk[i].ins_run = 0;

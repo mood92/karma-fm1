@@ -160,8 +160,8 @@ static void op_knobs(const char *const lab[4], const char *const val[4], const c
     cv_blit(0, OP_KNOB_Y);
 }
 
-/* the track bar: 1 2 3 DRUM, the selected track filled in its colour; a muted track dim, a soloed one
- * marked white, the one that records marked red */
+/* the track bar: 1 2 3 (the hidden drum track has no tile), the selected track filled in its colour;
+ * a muted track dim, a soloed one marked white, the one that records marked red */
 static void op_trackbar(uint32_t *cache)
 {
     static const char *const NAME[NTRK] = {"LANE 1", "LANE 2", "LANE 3", "DRUM"};
@@ -512,7 +512,8 @@ static void op_scene_sumo(track_t *t, const int32_t ratio[4], int analog_wave)
         cv_line(hx + ((co * 22) >> 15), 40 + ((si * 22) >> 15), hx + ((co * 28) >> 15), 40 + ((si * 28) >> 15), TE_COL[1]);
     }
     op_ell(120, 120, 84, 3, op_hit > 4u ? C_WHITE : OP_PUR_D);   /* the ring: it rings under the stamp */
-    op_sprite(lean ? OP_SPR_BUDDHA_LEAN : OP_SPR_BUDDHA, cx - 56, 20, lean && side < 0, TE_COL[0]);
+    op_sprite(lean ? OP_SPR_BUDDHA_LEAN : OP_SPR_BUDDHA, cx - 56, 20, 0, TE_COL[0]);   /* MAIN MENU: do not flip on
+                                                                                        * every other note */
     n = ratio[3] <= 0 ? 0 : 2 + ratio[3] * 7 / 1000;    /* KNOB 4: dust where the foot came down */
     for (i = 0; op_hit > 4u && i < n; i++) {
         int32_t fx = 120 + side * 40, d = (9 - (int32_t)op_hit) * 3;
@@ -1050,7 +1051,8 @@ static void op_fx_scene(const int32_t ratio[4])
  * flags: 1 a fill now, 2 the next bar is one, 4 it is asked for, 8 the beat. */
 static void op_mix_draw(const char *const val[4], const int32_t ratio[4], uint32_t flags)
 {
-    static const char *const LAB[4] = {"SYN1", "SYN2", "SYN3", "DRUM"};
+    static const char *const LAB[4] = {"LANE 1", "LANE 2", "LANE 3", ""};   /* MAIN MENU: no 4th (hidden drum) column;
+                                                                              * op_knobs skips an empty label */
     static const char KEYS[17] = "MMMMSSSSFB     T";
     static uint32_t head, scene, keys, knobs, bar;
     static uint8_t side;

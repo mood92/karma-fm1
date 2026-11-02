@@ -24,6 +24,8 @@ int main(int argc,char **argv)
     for(i=0;i<DRUM_LANES;i++)assert(lane_of_note(LANE_NOTE[i])==i);
     /* Render the same hits through all five kits; each must be distinct,
      * finite and silent after its one-shots have finished. */
+    song.g[G_DRLVL] = 100;   /* MAIN MENU: the player defaults this to 0 (drum track hidden); the
+                              * engine itself is unchanged, so drive it at audible level here */
     for(i=0;i<DRUM_USR;i++)   /* (the built-in kits: USR1..3 are the user slots) */ {
         memset(&drums,0,sizeof drums);drums.set=-2;
         TDRUM->p[P_E0]=(int16_t)i;

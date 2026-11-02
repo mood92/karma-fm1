@@ -299,6 +299,12 @@ static void up_ui(uint32_t op, uint32_t k)     /* 0 load, 1 erase, 2 save */
     char l[4];
     int rc;
     up_slot_label(l, k);
+    if (op != 0u && k >= LIVE_UP_BASE) {              /* MAIN MENU 1.2: slots reserved for the LIVE setlist's own
+                                                        * STORE -- loading one here is fine, saving/erasing it by
+                                                        * hand would pull it out from under a setlist slot */
+        ui_message("RESERVED FOR LIVE");
+        return;
+    }
     if (op != 1u && is_drum(TSEL)) {
         ui_message("DRUM TRACK: NO SOUND");
         return;

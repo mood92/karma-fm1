@@ -1,3 +1,7 @@
+> **This is a modified version** of KARMA: a "Main Menu Live Player" fork maintained at
+> <https://github.com/mood92/karma-fm1>, modified from 2026-11-01 onward. See
+> [CHANGES-MAINMENU.md](CHANGES-MAINMENU.md) for what changed and why.
+
 <p align="center"><img src="docs/img/acid.png" alt="KARMA on the FM-1: the ACID track's screen" width="240"></p>
 
 <h1 align="center">KARMA</h1>

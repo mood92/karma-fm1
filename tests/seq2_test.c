@@ -1216,6 +1216,7 @@ static void t_midiout(void)
 {
     uint32_t k, i, on = 0, off = 0, od = 0, ln = 0, bpb = (uint32_t)((double)FS * 60.0 / 120.0 / CTL + 0.5);
     reset(120);
+    song.g[G_DRCH] = 10;   /* MAIN MENU: defaults to OFF (drum track hidden); still exercise its MIDI OUT here */
     usb.config = 1;
     mo_r = mo_w;
     song.g[G_MIDI] = 0;
@@ -1918,6 +1919,7 @@ static double drdly_echo(int32_t dly, int32_t flt)
 {
     double e;
     reset(120);
+    song.g[G_DRLVL] = 100;   /* MAIN MENU: defaults to 0 (drum track hidden); drive it audibly here */
     song.g[G_DRREV] = 0;
     song.g[G_DRDLY] = (int16_t)dly;
     TDRUM->p[P_TFLT] = (int16_t)flt;

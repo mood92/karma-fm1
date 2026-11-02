@@ -79,6 +79,10 @@ static uint32_t up_engine(uint32_t k) { return k ? ENGI_PRISM : ENGI_ACID; }   /
 static void up_name(uint32_t k, char *b) { str_cpy(b, k ? "MY PAD" : "MY LEAD", 13); }
 static void up_slot_label(char *b, uint32_t k) { fmt_int(b, (int32_t)k + 1); }
 static void up_ui(uint32_t op, uint32_t k) { (void)op; (void)k; }
+static uint32_t up_store_slot = 0xFFFFFFFFu;
+static int16_t up_store_dist;
+static int up_store(uint32_t k, const char *name)   /* MAIN MENU 1.2: live_key's STORE (ui.c) */
+{ (void)name; up_store_slot = k; up_store_dist = TSEL->p[P_DIST]; return 0; }
 static void settings_save(void) {}
 #include "../firmware/src/ui_song.c"
 #include "../firmware/src/ui_studio.c"
@@ -894,7 +898,10 @@ int main(int argc, char **argv)
         song.sel = 0; go_home(); frame();
     }
 
-    {   /* (2.4) STEP, then ALGO to the drum track: "DRUM TRACK" (it drew the drum steps as notes, reading past them) */
+    {   /* (2.4) STEP, then ALGO to the drum track: "DRUM TRACK" (it drew the drum steps as notes, reading past them)
+         * MAIN MENU: ALGO no longer reaches the drum track at all (track_select is clamped to NPART, not NTRK,
+         * since the drum track is hidden) -- turning it 3 times from lane 1 just wraps within lanes 1..3, which
+         * is the point of 1.4. Check that instead of the old "lands on DRUM TRACK" expectation. */
         uint32_t j, b0;
         song.sel = 0; go_home(); frames(2);
         for (j = 0; j < NSTEP; j++) dstep_set(&TDRUM->dstep[j], j % 16u, LV_NORM, 3);
@@ -902,8 +909,8 @@ int main(int argc, char **argv)
         open_family(FAM_SEQ); ui.page = (uint8_t)j; ui.fam_last[FAM_SEQ] = (uint8_t)j; page_entered(); ui.force = 1; frames(2);
         b0 = ui.page;
         for (j = 0; j < 3u; j++) { encs[panel.enc[EN_ALGO]] = 1; frames(2); }
-        check(song.sel == TRK_DRUM && ui.page == b0 && !page_for_drum(cur_page()) && !strcmp(PAGES[ui.page].title, "STEP"),
-              "STEP on the drum track: not a page for the drums (DRUM TRACK shown, no piano roll of the drum steps)");
+        check(song.sel < NPART && ui.page == b0 && !strcmp(PAGES[ui.page].title, "STEP"),
+              "MAIN MENU: ALGO on STEP never lands on the drum track (it's hidden; stays within the 3 lanes)");
         for (j = 0; j < NSTEP; j++) memset(&TDRUM->dstep[j], 0, sizeof(dstep_t));
         song.sel = 0; go_home(); frames(4);
     }
@@ -973,7 +980,10 @@ int main(int argc, char **argv)
             for (b = 0; b < 200u; b++) { mix_block(o2, CTL); for (j = 0; j < CTL * 2u; j++) { uint32_t a = (uint32_t)(o2[j] < 0 ? -o2[j] : o2[j]); if (a > op) op = a; } }
             ui.force = 1; frames(2);
             for (lit = 0, x = 0; x < 240u * 240u; x++) lit += screen[x] != 0;
-            check(op < 64u && pk > 2000u && lit > 1500u, "visualiser: MASTER at 0: no sound, the picture as at full volume");
+            /* MAIN MENU: pk is lower now that the drum track no longer contributes to the full mix by
+             * default (G_DRLVL 0) -- the oscilloscope tap is still live (not master-faded), just quieter;
+             * 800 clears it with margin, measured ~1560 here. */
+            check(op < 64u && pk > 800u && lit > 1500u, "visualiser: MASTER at 0: no sound, the picture as at full volume");
             song.master_q12 = m0; frames(4);
         }
         check(vis_style == 0u, "visualiser: SELECT goes round (11 -> 1)");
@@ -1110,25 +1120,33 @@ int main(int argc, char **argv)
             trk[0].p[P_VOICE] = v0;
             #undef MIN
         }
-        {   /* 2.6, after Felucca 1.5.1: MIDI Program Change (queued by seq.c, loaded here) and FX + OCT- / OCT+: the THROWs */
+        {   /* 2.6, after Felucca 1.5.1 (MAIN MENU 1.1): MIDI Program Change picks a SETLIST SLOT, which carries
+             * its own lane -- recall jumps there, whichever track's channel the PC arrived on */
             uint8_t e0 = trk[1].eng_req, p0 = trk[1].preset;
             int16_t k0 = TDRUM->p[P_E0];
-            uint32_t k, tot = pl_total(&trk[1]), x0 = pl_entry(&trk[1], 0);
-            go_home(); frame();
-            pc_req[1] = 1;                                /* PC 0 on track 2's channel: the first sound of the list */
+            uint32_t k, x1 = pl_entry(&trk[1], 1);        /* a sound only lane 2 allows */
+            go_home(); track_select(0); frame();
+            if (!setlist_ready) setlist_default();
+            setlist_id[5] = (uint8_t)x1; setlist_lane[5] = 1;   /* slot 6 (n=5): lane 2's 2nd sound */
+            pc_req[1] = 6;                                /* PC on track 2's own channel: slot 6 */
             frame();
-            check(trk[1].eng_req == BANK[x0].e && trk[1].preset == bank_pi[x0] && !strncmp(ui.msg, "T2 PROG 0", 9),
-                  "MIDI Program Change 0: track 2 takes the first sound of its PRESETS list (T2 PROG 0)");
-            pc_req[3] = 3;                                /* PC 2 on the drum channel: kit 2 */
+            check(song.sel == 1 && trk[1].eng_req == BANK[x1].e && trk[1].preset == bank_pi[x1] &&
+                  !strncmp(ui.msg, "SLOT 6", 6),
+                  "MAIN MENU: Program Change picks setlist slot 6, which jumps to lane 2 and loads its sound");
+            pc_req[3] = 3;                                /* PC 2 on the drum channel: kit 2 (unaffected by 1.1) */
             frame();
             check(TDRUM->p[P_E0] == 2, "MIDI Program Change on the drum channel: kit 2");
-            pc_req[1] = (uint8_t)(tot + 1u);              /* past the end: nothing */
-            k = trk[1].eng_req;
-            frame();
-            check(trk[1].eng_req == k && trk[1].preset == bank_pi[x0], "MIDI Program Change past the list: ignored (no wrap)");
+            {
+                uint32_t e = trk[1].eng_req, p = trk[1].preset, s = song.sel;
+                setlist_id[6] = 0xFFu;                    /* slot 7 (n=6): empty */
+                pc_req[0] = 7;                             /* PC on track 1's own channel: still slot 7, still empty */
+                frame();
+                check(trk[1].eng_req == e && trk[1].preset == p && song.sel == s,
+                      "MAIN MENU: Program Change, an empty setlist slot: ignored");
+            }
             TDRUM->p[P_E0] = k0;
             set_engine_of(&trk[1], e0); apply_preset_to(&trk[1], p0); trk[1].engine = trk[1].eng_req;
-            frames(4);
+            track_select(0); frames(4);
             press(B_FX); frames(10);
             fm1_in.buttons |= BT(B_OCTDN); edges_btn |= BT(B_OCTDN); frame(); frame();
             k = thr_req;
@@ -1139,6 +1157,54 @@ int main(int argc, char **argv)
             fm1_in.buttons &= ~BT(B_OCTUP); frame();
             release(B_FX); frames(4);
             check(thr_req == 0u && song.octave == 0, "  let go: no THROW, the octave untouched");
+        }
+        {   /* REVIEW-PLAN.md 0.4: the LIVE layer itself (hold LFO) -- a slot key recalls (jumping lanes),
+             * the one-finger lock (~0.8 s, GLO_KEEP_MS) keeps it open, and OCT+ arms STORE for the next key */
+            uint32_t s3lane;
+            go_home(); track_select(0); frame();
+            if (!setlist_ready) setlist_default();
+            s3lane = setlist_lane[2];                      /* slot 3 (n=2): whichever lane it's on */
+            press(B_LFO); frames(10);
+            check(ui.layer == LY_LIVE, "LFO held: the LIVE layer (the setlist)");
+            key(key_of_white(2));                          /* white key 3: slot 3 */
+            check(song.sel == s3lane && live_slot[s3lane] == 2, "LIVE + white key 3: recall jumps to slot 3's own lane and loads it");
+            ui.force = 1; frame(); ppm("layer-live");
+            release(B_LFO); frames(2);
+            check(ui.layer == LY_PLAY, "  let go: LIVE closes");
+
+            press(B_LFO); frames(50); release(B_LFO); frames(2);     /* ~0.8 s, untouched: one-finger lock */
+            check(ui.layer == LY_LIVE && ly_lock == LY_LIVE, "LFO held ~0.8 s, untouched, let go: LIVE stays (one-finger lock)");
+            key(key_of_white(2));
+            check(song.sel == s3lane && ui.layer == LY_LIVE, "  its keys still recall, LIVE still open");
+            tap(B_LFO); frames(2);
+            check(ui.layer == LY_PLAY && ly_lock == LY_PLAY, "  LFO again: it goes");
+
+            press(B_LFO); frames(10);                      /* OCT+ tap: STORE armed; a key then stores that slot */
+            trk[song.sel].p[P_DIST] = 77;                   /* a tweak that must travel with the stored slot (1.2) */
+            fm1_in.buttons |= BT(B_OCTUP); edges_btn |= BT(B_OCTUP); frame(); frame();
+            fm1_in.buttons &= ~BT(B_OCTUP); frame();
+            check(live_store == 1, "LIVE + OCT+ tap: STORE armed");
+            key(key_of_white(9));                           /* slot 10 */
+            check(live_store == 0 && setlist_lane[9] == (uint8_t)song.sel &&
+                  setlist_id[9] == (uint8_t)(NBANK + LIVE_UP_BASE + 9u) &&
+                  up_store_slot == LIVE_UP_BASE + 9u && up_store_dist == 77,
+                  "  a key: the lane's tweaked sound snapshots into slot 10's own reserved user preset (1.2), STORE disarms");
+            {   /* 1.2: a sound that matches no factory/user list entry still stores fine (it is snapshotted
+                 * fresh, not looked up) -- this used to be refused (1.7) before STORE always snapshotted */
+                uint8_t u0 = trk[song.sel].user, p0 = trk[song.sel].preset;
+                trk[song.sel].user = 0;
+                trk[song.sel].preset = 250;                 /* out of range for any BANK entry at this engine */
+                trk[song.sel].p[P_DIST] = 99;
+                fm1_in.buttons |= BT(B_OCTUP); edges_btn |= BT(B_OCTUP); frame(); frame();
+                fm1_in.buttons &= ~BT(B_OCTUP); frame();
+                key(key_of_white(10));                      /* slot 11 */
+                check(live_store == 0 && setlist_id[10] == (uint8_t)(NBANK + LIVE_UP_BASE + 10u) &&
+                      up_store_slot == LIVE_UP_BASE + 10u && up_store_dist == 99,
+                      "LIVE + OCT+ + key, the sound matches no list entry: still stores (snapshotted fresh)");
+                trk[song.sel].user = u0;
+                trk[song.sel].preset = p0;
+            }
+            release(B_LFO); frames(2);
         }
         steps_clear(&trk[0]); go_home(); frames(16);
         {   /* SEQ: two steps held + KNOB 2: both one up (the turn accelerated once, not once a step) */
@@ -1336,25 +1402,18 @@ int main(int argc, char **argv)
             check(gen_on == 0u, "SEQ > GEN: OFF again");
             ui.page = (uint8_t)pg; ui.force = 1; frame();
         }
-    {   /* DRUMS: SEQ -> GRID -> KIT -> DRUM GEN -> GRID; DRUM GEN MAP on, playing */
+    {   /* DRUMS: SEQ -> GRID -> KIT -> DRUM GEN -> GRID; DRUM GEN MAP on, playing
+         * MAIN MENU: these pages are now unreachable by design. track_select(TRK_DRUM) is a no-op (ui.c:
+         * "the drum track stays out of reach"), so song.sel never becomes TRK_DRUM; drum_screen_input's own
+         * long-standing guard ("if (song.sel != TRK_DRUM ...) go_home()") then fires on the very next input
+         * frame even if the page is force-opened directly (as this test used to do), bouncing back to
+         * TRACKS before any button press. Check that instead of walking pages that can't be reached. */
         go_home(); song.playing = 0; ly_lock = LY_PLAY;
         track_select(TRK_DRUM); frames(2);
-        studio_open(SC_DRUM); drum_page = 0; frames(2);
-        tap(B_SEQ); frames(2);
-        check(on_drum_page() && drum_page == 1u, "DRUMS: SEQ, GRID -> KIT");
-        tap(B_SEQ); frames(2);
-        check(!ui.home && !strcmp(PAGES[ui.page].title, "DRUM GEN"), "DRUMS: SEQ on KIT -> SEQ > DRUM GEN");
-        song.g[G_DGMODE] = 1; song.g[G_DGX] = 20; song.g[G_DGY] = 90; frames(2);
-        song.playing = 1; TDRUM->seq_idx = 6; ui.force = 1; frame();
-        ppm("page-dgen");
-        song.playing = 0;
-        encs[panel.enc[EN_SELECT]] = 1; frames(3);
-        check(!strcmp(PAGES[ui.page].title, "DRUM GEN 2"), "DRUM GEN: SELECT -> DRUM GEN 2");
-        song.g[G_DGMODE] = 2; ui.force = 1; frames(2);
-        ppm("page-dgen2");
-        tap(B_SEQ); frames(2);
-        check(on_drum_page() && drum_page == 0u, "DRUM GEN: SEQ -> back to the GRID");
-        song.g[G_DGMODE] = 0; frames(2);
+        check(song.sel != TRK_DRUM, "the drum track is never selected (track_select refuses it)");
+        studio_open(SC_DRUM); drum_page = 0; frames(1);
+        check(!on_drum_page() && !strcmp(PAGES[ui.page].title, "TRACKS"),
+              "a force-opened DRUMS page is bounced back to TRACKS on the next input frame");
         track_select(0); frames(2);
         open_family(FAM_SEQ); frames(2);
         {

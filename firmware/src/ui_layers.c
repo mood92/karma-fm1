@@ -428,9 +428,10 @@ static void layer_key(uint32_t layer, uint32_t k, uint32_t down)
     case LY_MIX:
         if (k == 1u) {                                      /* (2.6) the black key F#3: MIDI LEARN on / off */
             ml_toggle();
-        } else if (w >= 0 && w < 4) {
+        } else if (w >= 0 && w < (int32_t)NPART) {           /* MAIN MENU: key 4 (the drum track) does nothing */
             trk[w].p[P_MUTE] = (int16_t)!trk[w].p[P_MUTE];
-        } else if (w >= 4 && w < 8) {
+        } else if (w >= 4 && w < 4 + (int32_t)NPART) {        /* MAIN MENU: key 8 (drum solo) does nothing -- it used
+                                                               * to silence every lane, a dangerous live bug */
             song.solo ^= (uint8_t)(1u << (w - 4));
         } else if (w == 8) {
             fill_held = 1;                                  /* FILL while held */
@@ -568,9 +569,10 @@ static void layer_knobs(uint32_t layer)
                 ml_knob(TSEL, ENGINES[TSEL->eng_req % NENGINES]->macro[k & 3u]);
             break;
         }
-        case LY_MIX: {
-            int16_t *lv = k == TRK_DRUM ? &song.g[G_DRLVL] : &trk[k].p[P_LEVEL];
-            *lv = (int16_t)clamp(*lv + accel(EN_K1 + k, s, 127), 0, 127);
+        case LY_MIX: {                                       /* MAIN MENU: knob 4 (the drum track) does nothing */
+            if (k >= NPART)
+                break;
+            trk[k].p[P_LEVEL] = (int16_t)clamp(trk[k].p[P_LEVEL] + accel(EN_K1 + k, s, 127), 0, 127);
             break;
         }
         default:
@@ -963,7 +965,7 @@ static void layer_screen_draw(void)
     case LY_MIX: {                                      /* mute 1..4, solo 1..4, fill / fill bar, tap */
         col = C_WHITE;
         str_cpy(sub, "mute  solo  fill  tap", sizeof sub);
-        for (i = 0; i < 4u; i++) {
+        for (i = 0; i < NPART; i++) {                        /* MAIN MENU: 3 lanes, not the hidden drum track */
             int m = trk[i].p[P_MUTE] != 0, so = (song.solo >> i) & 1u;
             str_cpy(tl[i].lab, "mute 1", 8);
             tl[i].lab[5] = (char)('1' + i);
@@ -975,6 +977,7 @@ static void layer_screen_draw(void)
             tl[4 + i].fg = so ? C_BLACK : TE_G3;
             tl[4 + i].top = TE_DIM[i];
         }
+        tl[3].lab[0] = 0; tl[7].lab[0] = 0;                   /* blank: the drum track's mute / solo keys */
         str_cpy(tl[8].lab, "fill", 8);                  /* key 9: held = a fill; key 10: the next bar is one */
         tl[8].bg = fill_now ? C_WHITE : TE_G1;
         tl[8].fg = fill_now ? C_BLACK : TE_G4;
@@ -987,7 +990,7 @@ static void layer_screen_draw(void)
         tl[15].fg = tl[15].bg == C_WHITE ? C_BLACK : C_WHITE;
         str_cpy(tl[14].lab, "tap>", 8);
         tl[14].bg = C_BLACK;
-        for (i = 0; i < 4u; i++) {
+        for (i = 0; i < NPART; i++) {                         /* MAIN MENU: 3 lanes; leave the 4th bar unset (hidden) */
             uint32_t lv = trk_level(i);
             static const char *const L[4] = {"1", "2", "3", "4"};
             lab[i] = L[i];
@@ -1002,7 +1005,7 @@ static void layer_screen_draw(void)
             setlist_default();
         col = C_WHITE;
         for (i = 0; i < 16u; i++) {
-            int cur = live_slot == (uint8_t)i;
+            int cur = live_slot[sel] == (uint8_t)i;               /* MAIN MENU: per-lane */
             setlist_name(i, nm);
             te_lower(tl[i].lab, nm, 8);
             tl[i].bg = cur ? C_WHITE : TE_G1;
@@ -1011,15 +1014,15 @@ static void layer_screen_draw(void)
         }
         if (live_store) {
             str_cpy(sub, "store: pick a slot", sizeof sub);
-        } else if (live_slot < SETLIST_N) {
+        } else if (live_slot[sel] < SETLIST_N) {
             char hd[8] = {'L', (char)('1' + sel), ' ', 0, 0, 0, 0, 0};
-            fmt_int(hd + 3, (int32_t)live_slot + 1);
+            fmt_int(hd + 3, (int32_t)live_slot[sel] + 1);
             str_cpy(sub, hd, sizeof sub);
             {
                 uint32_t n = str_len(sub);
                 sub[n] = ' ';
                 sub[n + 1u] = 0;
-                setlist_name(live_slot, nm);
+                setlist_name(live_slot[sel], nm);
                 te_lower(sub + n + 1u, nm, (uint32_t)sizeof sub - n - 1u);
             }
         } else {

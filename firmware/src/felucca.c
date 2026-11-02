@@ -2,6 +2,10 @@
  * Copyright (C) 2026 Leo Kuroshita (@kurogedelic), Hügelton Instruments */
 /* SLOOP (based on FELUCCA): one compilation unit (the HAL is header-only). Order matters. */
 #include <stdint.h>
+#define MAIN_MENU_NO_DRUMS 1     /* the 4th track (drums) is hidden from the player and never sounds, whatever a
+                                  * project, MIDI, or a knob sets G_DRLVL / G_DRCH to (drums.c). The engine itself
+                                  * is unchanged -- the host test suite (hostsim.c) does not define this, and
+                                  * still exercises it directly. */
 #define PR_WAVES_FROM_PLX 1      /* PLAITS WAVE (prism_dsp.c) reads Plaits' own 50 KB wavetable: one copy (plx.cc) */
 #ifndef KARMA_DUAL_CORE                  /* (before the HAL: fm1_sys.h holds CPU1 at every reset with it) */
 #define KARMA_DUAL_CORE 1        /* CPU1 renders tracks 2 and 3 (fx.c mix_block; the worker after Melodee). On Ariel's FM-1

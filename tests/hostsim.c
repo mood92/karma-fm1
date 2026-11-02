@@ -364,7 +364,11 @@ static int steal_test(const char *dir)
     const uint32_t frames = 4u * FS;
     char path[512];
     FILE *w;
-    int32_t prev = 0, *L = calloc(frames, sizeof *L);
+    /* MAIN MENU: frames (4*FS) isn't a multiple of CTL; the loop below writes up to the next CTL
+     * boundary past it. A heap-buffer-overflow (ASan) / random "free(): invalid pointer" on later
+     * tests, pre-existing on upstream Karma too (confirmed on 7d2560b) -- not something our changes
+     * caused. Round the allocation up to where the loop actually writes. */
+    int32_t prev = 0, *L = calloc((frames + CTL - 1u) / CTL * CTL, sizeof *L);
     uint32_t f, i, p, k, events[6], nev = 0, bad = 0, kills0;
     double worst = 0;
     snprintf(path, sizeof path, "%s/steal.wav", dir);
@@ -460,7 +464,7 @@ static int xfade_test(const char *dir)
     const uint8_t to[4] = {ENGI_JUNO, ENGI_ACID, ENGI_ELEM, ENGI_JUNO};
     char path[512];
     FILE *w;
-    int32_t *L = calloc(frames, sizeof *L);
+    int32_t *L = calloc((frames + CTL - 1u) / CTL * CTL, sizeof *L);   /* MAIN MENU: see steal_test's note */
     uint32_t f, i, k, bad = 0, late_ok = 0;
     double worst = 0;
     track_t *t = &trk[0];
@@ -654,6 +658,7 @@ static int trs_test(void)
     uint32_t d0, i;
     int ok_parts, ok_drum, ok_sel, ok_off, ok_hang, ok_rec;
     host_tracks_init();
+    song.g[G_DRCH] = 10;   /* MAIN MENU: defaults to OFF (drum track hidden); still exercise ch 10 -> drums here */
     for (i = 0; i < NPART; i++) {
         host_preset(&trk[i], 0, 1);
         trk[i].p[P_VOICE] = V_POLY;

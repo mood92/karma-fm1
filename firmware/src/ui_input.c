@@ -146,10 +146,10 @@ static uint32_t keys_lit(void)
             m |= 1u << key_of_white(i);
         for (i = 0; i < 4u; i++)
             m |= 1u << BLK[i];
-        if (live_slot < 16u && !blink)
-            m &= ~(1u << key_of_white(live_slot));
-        else if (live_slot >= 16u && live_slot < SETLIST_N && !blink)
-            m &= ~(1u << BLK[live_slot - 16u]);
+        if (live_slot[song.sel] < 16u && !blink)                       /* MAIN MENU: per-lane now */
+            m &= ~(1u << key_of_white(live_slot[song.sel]));
+        else if (live_slot[song.sel] >= 16u && live_slot[song.sel] < SETLIST_N && !blink)
+            m &= ~(1u << BLK[live_slot[song.sel] - 16u]);
         return m | fm1_in.notes;
     }
     case LY_ERASE:                                 /* the sounds the pattern holds (NOTES: dim, the hits lit) */
@@ -742,6 +742,11 @@ static uint8_t home_eat;                                  /* HOME pressed to unl
 static void layer_unlock(void)
 {
     if (ly_lock != LY_PLAY) {
+        if (ly_lock == LY_LIVE && live_store) {           /* MAIN MENU: see the LY_PLAY path in layers_input */
+            live_store = 0;
+            live_store_t = 0;
+            ui_message("STORE OFF");
+        }
         ly_lock = LY_PLAY;
         ui.force = 1;
     }
@@ -827,6 +832,13 @@ static int layers_input(uint32_t note_edges, uint32_t *pressed, uint32_t home)
         }
         if (ui.layer != LY_PLAY) {
             ly_quiet_t = fm1_ms | 1u;                     /* a layer shown lets go: KNOB 1..4 quiet a while (#39) */
+            if (ui.layer == LY_LIVE && live_store) {      /* MAIN MENU: LIVE let go with STORE still armed -- disarm it,
+                                                            * or the next slot key pressed back in LIVE later would
+                                                            * silently overwrite it */
+                live_store = 0;
+                live_store_t = 0;
+                ui_message("STORE OFF");
+            }
             ui.layer = LY_PLAY;
             ui.step_held = 0;
             ui.force = 1;                                 /* the page comes back */
@@ -868,6 +880,7 @@ static int layers_input(uint32_t note_edges, uint32_t *pressed, uint32_t home)
         if (press) {
             used[held] = 1;
             live_store ^= 1u;
+            live_store_t = live_store ? (uint16_t)(LIVE_STORE_MS / 16u) : 0u;   /* MAIN MENU: disarms itself */
             ui_message(live_store ? "STORE: PICK SLOT" : "STORE OFF");
         }
     }

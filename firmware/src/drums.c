@@ -365,7 +365,11 @@ static const uint16_t DRUM_KIT_TRIM[7] = {160, 145, 96, 149, 183, 215, 256};
 static inline void drums_mix(int32_t *ml, int32_t *mr, int32_t *rev, int32_t *dly, int32_t *mono, uint32_t n)
 {
     uint32_t k, i;
+#if MAIN_MENU_NO_DRUMS
+    int32_t lvl = 0, send, dsend, csend, pk = drums.peak;   /* the drum track never sounds, whatever G_DRLVL is */
+#else
     int32_t lvl = song.g[G_DRLVL] * 200, send, dsend, csend, pk = drums.peak;
+#endif
     int32_t kboost = (int32_t)((DRUM_BOOST_Q8 * (drum_kit() < 7u ? DRUM_KIT_TRIM[drum_kit()] : 256u)) >> 8);
     int32_t pan = trk[TRK_DRUM].p[P_PAN], gl = 4096 - (pan > 0 ? pan * 64 : 0), gr = 4096 + (pan < 0 ? pan * 64 : 0);
     for (i = 0; i < n && drums.tail; i++) {         /* declick tail, ~0.4 ms */

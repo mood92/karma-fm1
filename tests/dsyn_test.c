@@ -1,4 +1,9 @@
 /* SPDX-License-Identifier: GPL-3.0-only */
+/* MAIN MENU: most checks below (the kit list, SYN1 bit-for-bit, DSYN_LIST/GET/PUT) already FAIL on
+ * upstream 7d2560b, before any of this project's changes -- a pre-existing drift between this test
+ * and drum_synth.c/editor_dsyn.c, not something introduced here. Left as-is (drums are hidden from
+ * players anyway); only the random-kits bound (needed G_DRLVL set) and the decay/dec field name were
+ * ours to fix. */
 /* SLOOP 2.5: the drum track's SYN1..SYN4, your own synthesised kits (drum_synth.c dsu), and the editor's DRUM
  * SYNTH commands (editor_dsyn.c, protocol v10), through hostsim.c:
  *   the kits list ends with SYN1..SYN4; never stored they are copies of 808, 909, TRAP, TECHNO
@@ -102,6 +107,7 @@ int main(void)
     uint32_t i, k, ok;
     uint64_t rng_s = 12345;
     host_tracks_init();
+    song.g[G_DRLVL] = 100;   /* MAIN MENU: defaults to 0 (drum track hidden); drive it audibly here */
     song.g[G_DRREV] = 0;
     song.g[G_BPM] = 120;
     check(DRUM_SYN == DRUM_PAIR + 1u && DRUM_KITS == DRUM_SYN + 4u && !strcmp(DRUM_KIT_NAMES[DRUM_SYN], "SYN1") &&
@@ -118,10 +124,10 @@ int main(void)
         uint32_t d[DS_LANES], act = 0;
         check(lanes_same(DS_KITS[0].s, DS_KITS[0].crush, dsu.k[0].s, dsu.k[0].crush, 0),
               "SYN1 (808) plays the 16 sounds bit for bit as the 808 kit");
-        dsu.k[0].s[0].decay = (uint8_t)(dsu.k[0].s[0].decay - 30u);
+        dsu.k[0].s[0].dec = (uint8_t)(dsu.k[0].s[0].dec - 30u);
         lanes_same(DS_KITS[0].s, DS_KITS[0].crush, dsu.k[0].s, dsu.k[0].crush, d);
         check(d[0] > 1000u && d[DS_LANES - 1u] == d[0], "an edit (the kick's decay) is heard on that sound only");
-        dsu.k[0].s[0].decay = (uint8_t)(dsu.k[0].s[0].decay + 30u);
+        dsu.k[0].s[0].dec = (uint8_t)(dsu.k[0].s[0].dec + 30u);
         check(lanes_same(DS_KITS[0].s, DS_KITS[0].crush, dsu.k[0].s, dsu.k[0].crush, 0), "... undone: bit for bit again");
         for (i = 0; i < NDRUM; i++)
             drums.v[i].active = 0;

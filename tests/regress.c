@@ -223,6 +223,7 @@ static void job_drums(const job_t *j)           /* every GM note through the dru
     uint32_t n, k = 0;
     (void)j;
     host_tracks_init();
+    song.g[G_DRLVL] = 100;   /* MAIN MENU: defaults to 0 (drum track hidden); drive it audibly here */
     for (n = 35; n <= 81u; n++, k++) {
         input_on(TDRUM, n, 60u + (n * 7u) % 60u);
         run_to(at(0.06 * (k + 1)));

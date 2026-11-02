@@ -82,6 +82,13 @@ LXR firmware (above); KARMA is not affiliated with, approved or endorsed by Eric
 firmware that runs on FM-1 hardware. It is not affiliated with, endorsed by or supported
 by those owners.
 
+"KARMA" is the name used by the upstream project this repository is forked from
+(<https://github.com/eatyourgreensstudio-dotcom/karma-fm1>); this fork is not that project
+and is not endorsed by or affiliated with it. "Main Menu" / "Main Menu Live Player" is the
+name this fork (<https://github.com/mood92/karma-fm1>) uses for its own modifications; it
+is not a brand of Hügelton Instruments, M-VAVE, or any third party credited above. See
+`CHANGES-MAINMENU.md` for what was changed and by whom.
+
 ## Radio
 
 Felucca never enables the Bluetooth / Wi-Fi radio of the hardware.

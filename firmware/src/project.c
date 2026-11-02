@@ -703,7 +703,7 @@ static void project_apply(const project_t *p)
     drum_mute = 0;                                      /* (the live mutes: a performance's, not the project's) */
     fm1_irq_off();                                      /* the audio ISR must not see half a project */
     proj_apply(p, 1);
-    song.sel = (uint8_t)(p->sel < NTRK ? p->sel : 0u);
+    song.sel = (uint8_t)(p->sel < NPART ? p->sel : 0u);   /* MAIN MENU: never land on the hidden drum track */
     fm1_irq_on();
     for (k = 0; k < NPART; k++)                         /* a format 1 project: the default sounds of tracks 2, 3 */
         if (p->t[k].preset == 0xFFu) {
@@ -797,7 +797,7 @@ static void autosave_resume(void)              /* power-on: the project as it wa
     }
     drch_seed = 0;
     proj_apply(q, 1);
-    song.sel = (uint8_t)(q->sel < NTRK ? q->sel : 0u);
+    song.sel = (uint8_t)(q->sel < NPART ? q->sel : 0u);   /* MAIN MENU: never land on the hidden drum track */
     for (n = 0; n < NPART; n++)
         trk[n].engine = trk[n].eng_req;        /* (nothing sounds yet: no fade) */
 #endif
@@ -917,9 +917,14 @@ static int project_used(uint32_t slot) { return proj_ok(&proj_slot[slot & 3u]); 
  * the default (nothing learned, channels 1 2 3 10, OTHER SEL, BEND 2): else the object is exactly 2.5's. 2.6 test
  * builds wrote 32 (the map) or 36 bytes (and the channels) */
 #define MIDI_PART (2u * ML_N + 8u)
-/* LIVE SETLIST: the settings object's last part, after the MIDI part: the 20 slots (ui.c setlist), one byte each, 4 spare.
- * Written together with the MIDI part (the pair is one "third part"); an object without it reads as the default setlist */
-#define LIVE_PART 24u
+/* LIVE SETLIST: the settings object's last part, after the MIDI part: the 20 slots (ui.c setlist_id /
+ * setlist_lane), 2 bytes each (id, lane), 4 spare. MAIN MENU: was 1 byte/slot (LIVE_PART 24) before each
+ * slot carried its own lane (1.1); dsu_boot below still accepts that older 24-byte length, but its bytes
+ * meant a lane-relative list position, which can't be reinterpreted as (id, lane) -- it falls back to
+ * setlist_default() instead of guessing. Written together with the MIDI part (the pair is one "third
+ * part"); an object without it reads as the default setlist */
+#define LIVE_PART 44u
+#define LIVE_PART_OLD 24u
 #define SET_PART (MIDI_PART + LIVE_PART)
 _Static_assert(sizeof(persist_t) + sizeof(dsu_bank_t) + SET_PART <= ST_PAYLOAD_MAX, "the settings object fits its sector");
 static uint8_t midi_saved[SET_PART];
@@ -937,7 +942,11 @@ static void midi_part_fill(uint8_t *b)
     if (!setlist_ready)
         setlist_default();
     for (k = 0; k < LIVE_PART; k++)
-        b[MIDI_PART + k] = k < SETLIST_N ? setlist[k] : 0u;
+        b[MIDI_PART + k] = 0u;
+    for (k = 0; k < SETLIST_N; k++) {
+        b[MIDI_PART + 2u * k] = setlist_id[k];
+        b[MIDI_PART + 2u * k + 1u] = setlist_lane[k];
+    }
 }
 static int midi_part_default(const uint8_t *b)
 {
@@ -946,8 +955,8 @@ static int midi_part_default(const uint8_t *b)
     for (k = 0; k < 2u * ML_N; k++)
         if (b[k])
             return 0;
-    for (k = 0; k < SETLIST_N; k++)
-        if (b[MIDI_PART + k] != k)
+    for (k = 0; k < SETLIST_N; k++)                      /* MAIN MENU: id, lane -- the walk-each-lane default */
+        if (b[MIDI_PART + 2u * k] != (uint8_t)pl_entry(&trk[k % NPART], k / NPART) || b[MIDI_PART + 2u * k + 1u] != k % NPART)
             return 0;
     return b[2u * ML_N] == def[0] && b[2u * ML_N + 1u] == def[1] && b[2u * ML_N + 2u] == def[2] &&
            b[2u * ML_N + 3u] == (uint8_t)(def[3] | def[4] << 7) && b[2u * ML_N + 4u] == def[5];
@@ -1000,16 +1009,21 @@ static void dsu_boot(void)                          /* the SYN kits (and the MID
         ml_tab[k] = 0;
     if (st_current(OBJ_SETTINGS, &h) >= 0 &&
         (h.len == len || h.len == len + 2u * ML_N || h.len == len + 2u * ML_N + 4u || h.len == len + MIDI_PART ||
-         h.len == len + SET_PART) &&
+         h.len == len + MIDI_PART + LIVE_PART_OLD || h.len == len + SET_PART) &&
         dsu_valid((const dsu_bank_t *)(st_buf + sizeof(persist_t)))) {
         memcpy(&dsu, st_buf + sizeof(persist_t), sizeof dsu);
         for (k = 0; k < DSU_N; k++)
             dsu_fix_kit(&dsu.k[k]);
         if (h.len > len)
             midi_part_read(st_buf + len, h.len - len > MIDI_PART ? MIDI_PART : h.len - len);
-        if (h.len == len + SET_PART) {
-            for (k = 0; k < SETLIST_N; k++)
-                setlist[k] = st_buf[len + MIDI_PART + k];
+        if (h.len == len + SET_PART) {                  /* MAIN MENU: id, lane; the old 1-byte/slot format
+                                                          * (len + MIDI_PART + LIVE_PART_OLD) meant a
+                                                          * lane-relative list position -- not safely
+                                                          * reinterpreted, so it is left as setlist_default() */
+            for (k = 0; k < SETLIST_N; k++) {
+                setlist_id[k] = st_buf[len + MIDI_PART + 2u * k];
+                setlist_lane[k] = st_buf[len + MIDI_PART + 2u * k + 1u];
+            }
             setlist_ready = 1;
         }
         drch_seed = h.len == len;

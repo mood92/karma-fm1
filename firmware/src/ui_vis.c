@@ -748,10 +748,10 @@ static int boot_draw(void)
                 cv_rect(72 + (int32_t)(x * 2u), 44 + (int32_t)(y * 2u), 2, 2, c);
             }
         (void)ROW;
-        for (x = 0; x < 4u; x++) {                              /* the tracks' bars */
+        for (x = 0; x < NPART; x++) {                           /* MAIN MENU: 3 lanes, not the hidden drum track */
             int32_t w = clamp(((int32_t)t - 50 - (int32_t)x * 4) * 5, 0, 44);
             if (w)
-                cv_rect(26 + (int32_t)x * 48 + (44 - w) / 2, 150, w, 5, mix565(COL[x], C_BLACK, fade));
+                cv_rect(50 + (int32_t)x * 48 + (44 - w) / 2, 150, w, 5, mix565(COL[x], C_BLACK, fade));
         }
         if (t >= 72u) {
             const char *v = "MAIN MENU  LIVE PLAYER";
