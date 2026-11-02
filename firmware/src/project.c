@@ -508,6 +508,59 @@ static void proj_cl_get(const project_t *p)
     cloud_resync = 1;                                   /* (the page's SEND: ui_studio.c cloud_ui_sync) */
 }
 
+/* ACID MAX (MAIN MENU ACID): the engine's own bytes (track_t.ax) have no room in the 3840-byte object, so they ride in the
+ * hidden drum track's step area (640 bytes it has no use for there): "AX1" + 0, then 28 bytes a synth track. A project
+ * without the mark (older, or another firmware's) gives the engine's defaults. Not built without MM_ACID: the drum
+ * track's pattern is used there */
+#define PROJ_AXB 28u
+_Static_assert(AXN >= PROJ_AXB && 4u + NPART * PROJ_AXB <= sizeof(((proj_trk_t *)0)->step), "ax stash fits");
+static void proj_ax_put(project_t *p)
+{
+#if MM_ACID
+    uint8_t *b = (uint8_t *)p->t[TRK_DRUM].step;
+    uint32_t k, i;
+    memset(b, 0, sizeof p->t[TRK_DRUM].step);
+    b[0] = 'A', b[1] = 'X', b[2] = '1';
+    for (k = 0; k < NPART; k++)
+        for (i = 0; i < PROJ_AXB; i++)
+            b[4u + k * PROJ_AXB + i] = (uint8_t)(int8_t)clamp(trk[k].ax[i], -128, 127);
+#else
+    (void)p;
+#endif
+}
+static void proj_ax_get(const project_t *p)
+{
+    uint32_t k, i;
+    for (k = 0; k < NPART; k++) {
+        track_t *t = &trk[k];
+        const engine_t *e = ENGINES[t->eng_req % NENGINES];
+#if MM_ACID
+        const uint8_t *b = (const uint8_t *)p->t[TRK_DRUM].step;
+        int there = b[0] == 'A' && b[1] == 'X' && b[2] == '1' && b[3] == 0;
+#else
+        int there = 0;
+#endif
+        for (i = 0; i < AXN; i++) {
+            if (i >= e->nax || i >= PROJ_AXB) {
+                t->ax[i] = 0;
+            } else if (there) {
+#if MM_ACID
+                t->ax[i] = (int16_t)clamp((int8_t)b[4u + k * PROJ_AXB + i], e->ax[i].min, e->ax[i].max);
+#endif
+            } else {
+                t->ax[i] = e->ax[i].def;
+            }
+        }
+    }
+#if MM_ACID
+    {
+        const uint8_t *b = (const uint8_t *)p->t[TRK_DRUM].step;
+        if (b[0] == 'A' && b[1] == 'X' && b[2] == '1' && b[3] == 0)   /* (the stash is not a drum pattern) */
+            memset(trk[TRK_DRUM].step, 0, sizeof trk[TRK_DRUM].step);
+    }
+#endif
+}
+
 static void proj_capture(project_t *p)        /* what is playing now, as a project */
 {
     uint32_t i;
@@ -532,6 +585,7 @@ static void proj_capture(project_t *p)        /* what is playing now, as a proje
     }
     proj_ds_put(p);
     proj_cl_put(p);
+    proj_ax_put(p);
     p->sum = proj_sum(p);
 }
 
@@ -609,6 +663,7 @@ static void proj_apply(const project_t *p, int all)
             t->preset = 0;
         }
     }
+    proj_ax_get(p);
 }
 
 #ifndef PROJ_HOST

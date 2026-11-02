@@ -45,7 +45,8 @@ static void draw_head(void)
     static const char *const TAG[NTRK] = {"SYN1", "SYN2", "SYN3", "DRUM"};
     const page_t *pg = cur_page();
     const engine_t *e = ENGINES[TSEL->eng_req % NENGINES];
-    const char *title = ui.home ? "HOME" : pg->scope == SC_ENGINE && !is_drum(TSEL) ? e->page_title[pg->id[0] != P_E0] : pg->title;
+    const char *title = ui.home ? "HOME" : pg->scope == SC_ENGINE && !is_drum(TSEL) ? e->page_title[pg->id[0] != P_E0]
+                        : pg->scope == SC_AX && e->ax_title && pg->id[0] / 4u < e->nax / 4u ? e->ax_title[pg->id[0] / 4u] : pg->title;
     if (mlu.on)                                       /* MIDI LEARN on (2.6, GLO + F#3) */
         title = "LEARN";
     op_header(!is_drum(TSEL) && e != &ENG_GONE ? e->name : TAG[song.sel & 3u],   /* a synth track: its engine, by name */

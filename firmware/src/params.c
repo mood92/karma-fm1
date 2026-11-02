@@ -462,7 +462,7 @@ static void param_format(const param_desc_t *d, int32_t v, char *val, const char
 /* ------------------------------------------------------------ pages --- */
 enum { FAM_HOME, FAM_ENV, FAM_LFO, FAM_FX, FAM_SCL, FAM_EDIT, FAM_GLO, FAM_SAVE, FAM_ARP, FAM_SEQ, FAM_TRK,
        FAM_COUNT };
-enum { SC_TRACK, SC_GLOBAL, SC_ENGINE, SC_STEP, SC_TRK, SC_SONG, SC_DRUM };
+enum { SC_TRACK, SC_GLOBAL, SC_ENGINE, SC_STEP, SC_TRK, SC_SONG, SC_DRUM, SC_AX };
 enum { GR_NONE, GR_ADSR, GR_LFO, GR_STEPS, GR_ARP, GR_SCALE, GR_FX, GR_ROLL, GR_BROWSE, GR_SLOTS, GR_USER, GR_TRK,
        GR_SLCR, GR_INS, GR_HEX, GR_DGEN };
 
@@ -498,6 +498,13 @@ static const page_t PAGES[] = {
     {"HEX MORE", FAM_EDIT, SC_GLOBAL, GR_HEX, {G_HXAUX1, G_HXAUX2, 0xFF, 0xFF}},
     {"EDIT 1", FAM_EDIT, SC_ENGINE, GR_NONE, {P_E0, P_E1, P_E2, P_E3}},
     {"EDIT 2", FAM_EDIT, SC_ENGINE, GR_NONE, {P_E4, P_E5, P_E6, P_E7}},
+    {"MORE 1", FAM_EDIT, SC_AX, GR_NONE, {0, 1, 2, 3}},        /* the engine's own bytes (track_t.ax), four to a page; */
+    {"MORE 2", FAM_EDIT, SC_AX, GR_NONE, {4, 5, 6, 7}},        /* page_shown: only an engine that has them (nax) */
+    {"MORE 3", FAM_EDIT, SC_AX, GR_NONE, {8, 9, 10, 11}},
+    {"MORE 4", FAM_EDIT, SC_AX, GR_NONE, {12, 13, 14, 15}},
+    {"MORE 5", FAM_EDIT, SC_AX, GR_NONE, {16, 17, 18, 19}},
+    {"MORE 6", FAM_EDIT, SC_AX, GR_NONE, {20, 21, 22, 23}},
+    {"MORE 7", FAM_EDIT, SC_AX, GR_NONE, {24, 25, 26, 27}},
     {"FILTER", FAM_EDIT, SC_TRACK, GR_NONE, {P_FTYPE, P_E4, P_E5, P_E7}},   /* ANALOG only (2.6, Felucca 1.5): TYPE CUT
                                                                           * RES KTR (page_shown) */
     {"VOICE", FAM_EDIT, SC_TRACK, GR_NONE, {P_VOICE, P_GLIDE, P_GLMODE, P_PRIO}},
@@ -544,12 +551,14 @@ static int page_for_drum(const page_t *pg)
         return 0;                                   /* by ALGO from a synth track, it drew the drum steps as notes */
     if (pg->scope == SC_GLOBAL)
         return pg->graph != GR_BROWSE && pg->graph != GR_USER;
-    return pg->scope != SC_ENGINE && (pg->scope != SC_TRACK || pg->fam == FAM_SEQ || pg->graph == GR_SLCR ||
+    return pg->scope != SC_ENGINE && pg->scope != SC_AX && (pg->scope != SC_TRACK || pg->fam == FAM_SEQ || pg->graph == GR_SLCR ||
                                       pg->graph == GR_INS);
 }
 /* a page the buttons and SELECT reach on the selected track: EDIT > FILTER (TYPE) on ANALOG only */
 static int page_shown(const page_t *pg)
 {
+    if (pg->scope == SC_AX)                          /* the engine's own pages: ACID MAX has them, the others do not */
+        return !is_drum(TSEL) && pg->id[0] < ENGINES[TSEL->eng_req % NENGINES]->nax;
     if (pg->graph == GR_HEX)                         /* the HEX sound pages: the drum track's EDIT, and only its */
         return is_drum(TSEL);
     if (pg->fam == FAM_EDIT && is_drum(TSEL))
@@ -590,6 +599,15 @@ static const param_desc_t *page_desc(const page_t *pg, uint32_t slot, int16_t **
     if (pg->scope == SC_STEP || pg->scope == SC_TRK) {
         *valp = 0;
         return 0;
+    }
+    if (pg->scope == SC_AX) {
+        const engine_t *e = ENGINES[TSEL->eng_req % NENGINES];
+        if (id >= e->nax) {
+            *valp = 0;
+            return 0;
+        }
+        *valp = &TSEL->ax[id];
+        return &e->ax[id];
     }
     if (pg->scope == SC_GLOBAL) {
         *valp = &song.g[id];

@@ -320,7 +320,7 @@ typedef struct track {
     /* engine switch (voice.c engine_block): the old engine's voices fade out, then it switches */
     uint8_t xf_on, xf;           /* fading; blocks of the fade still to render */
     int16_t pe_old[8];           /* P_E0..P_E7 of the sounding engine: the fade renders with these */
-    int8_t ax[AXN];              /* ACID MAX: the engine's own parameters beyond P_E7 (engine_t.ax); 0 for the others */
+    int16_t ax[AXN];              /* ACID MAX: the engine's own parameters beyond P_E7 (engine_t.ax); 0 for the others */
     int16_t p_old[P_COUNT];      /* 2.6: the whole sound before a preset loaded (voice.c sound_change): the fade's */
     uint8_t pold;                /* 1: a preset loaded, the sounding voices fade out with p_old first */
     uint16_t ins_res;            /* 2.6: |the INSERT's last output| (fx.c: its tail runs until it is ~0) */

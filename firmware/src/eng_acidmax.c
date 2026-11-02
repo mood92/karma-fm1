@@ -139,7 +139,7 @@ static void acidmax_render(track_t *t, voice_t *v, int32_t *out, uint32_t n, con
     static const uint8_t POT[8] = {BASS303_WAVE, BASS303_POS, BASS303_MOTION, BASS303_CUTOFF,
                                    BASS303_RESO, BASS303_ENVMOD, BASS303_DECAY, BASS303_ACCENT};
     acidmax_slot_t *A = acidmax_slot(t);
-    const int8_t *ax;
+    const int16_t *ax;
     float y[CTL], f;
     uint32_t i, k;
     float drv, dmix, dtone_a, dtone, hamt, clar, pluck, air, bz, bzf, nam, nrate, nf0, cbass, cbright, pamt, pmix, pout, ptone;

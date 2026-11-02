@@ -479,6 +479,8 @@ static void edit_param(uint32_t slot, int32_t steps)
                                     : clamp(*vp + accel(EN_K1 + slot, steps, d->max - d->min), d->min, d->max);
     *vp = (int16_t)v;
     knob_popup(slot, d, *vp);
+    if (pg->scope == SC_AX)                               /* the engine's own bytes: no step lock, no MIDI LEARN */
+        return;
     if (pg->scope != SC_GLOBAL && p_lockable(id))
         ui.lock_par = (uint8_t)id;                        /* the SEQ layer's lock parameter: the last one touched */
     if (pg->scope != SC_GLOBAL)

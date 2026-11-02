@@ -400,6 +400,8 @@ static void apply_preset_to(track_t *t, uint32_t pi)
             t->p[i] = TP[i].def;                     /* sounds the same after any edit (not the pattern, not the mix) */
     for (i = 0; i < 8u; i++)
         t->p[P_E0 + i] = (int16_t)e->presets[pi].e[i];
+    for (i = 0; i < AXN; i++)                         /* the engine's own bytes (ACID MAX): the preset's, else the descriptors' defaults */
+        t->ax[i] = i < e->nax ? (e->presets[pi].ax ? e->presets[pi].ax[i] : e->ax[i].def) : 0;
     t->p[P_ATK] = e->presets[pi].env[0];
     t->p[P_DEC] = e->presets[pi].env[1];
     t->p[P_SUS] = e->presets[pi].env[2];
@@ -513,7 +515,23 @@ static const struct { uint8_t kind, e; const char *name; } BANK[] = {   /* the P
     {BK_PLUCK, ENGI_PRISM, "MODAL BELL"}, {BK_PLUCK, ENGI_PRISM, "MODAL WOOD"}, {BK_FX, ENGI_PRISM, "NOISE SWEEP"},
     {BK_FX, ENGI_PRISM, "NOISE TONE"}, {BK_FX, ENGI_PRISM, "SPEECH"}, {BK_FX, ENGI_PRISM, "ROBOT WORDS"},
     {BK_FX, ENGI_PRISM, "PARTICLES"}, {BK_FX, ENGI_PRISM, "DROPLETS"}, {BK_FX, ENGI_PRISM, "PL KICK"},
-    {BK_FX, ENGI_PRISM, "PL SNARE"}, {BK_FX, ENGI_PRISM, "PL HIHAT"},
+    {BK_FX, ENGI_PRISM, "PL SNARE"}, {BK_FX, ENGI_PRISM, "PL HIHAT"},    /* ACID MAX (MAIN MENU ACID) */
+    {BK_BASS, ENGI_ACIDMAX, "303 FOREVER"}, {BK_BASS, ENGI_ACIDMAX, "SQUARE BITE"},
+    {BK_BASS, ENGI_ACIDMAX, "CHROME SQUELCH"}, {BK_BASS, ENGI_ACIDMAX, "DEEP DUB ACID"},
+    {BK_BASS, ENGI_ACIDMAX, "RUBBER LINE"}, {BK_BASS, ENGI_ACIDMAX, "MORPH PULSE"},
+    {BK_BASS, ENGI_ACIDMAX, "MORPH SWEEP"}, {BK_BASS, ENGI_ACIDMAX, "FOLD BITE"},
+    {BK_BASS, ENGI_ACIDMAX, "FOLD DRIVE"}, {BK_BASS, ENGI_ACIDMAX, "VOWEL ACID"},
+    {BK_LEAD, ENGI_ACIDMAX, "VOWEL TALK"}, {BK_BASS, ENGI_ACIDMAX, "WT CLASSIC"},
+    {BK_BASS, ENGI_ACIDMAX, "WT SWEEP"}, {BK_LEAD, ENGI_ACIDMAX, "SYNC SCREAM"},
+    {BK_BASS, ENGI_ACIDMAX, "SYNC RIDE"}, {BK_LEAD, ENGI_ACIDMAX, "VOCAL OOH EEE"},
+    {BK_LEAD, ENGI_ACIDMAX, "VOCAL ACID"}, {BK_LEAD, ENGI_ACIDMAX, "FM BELL BASS"},
+    {BK_BASS, ENGI_ACIDMAX, "FM SOFT SUB"}, {BK_FX, ENGI_ACIDMAX, "DIGI GRIT"}, {BK_FX, ENGI_ACIDMAX, "DIGI STEPS"},
+    {BK_FX, ENGI_ACIDMAX, "BUZZ BOX"}, {BK_FX, ENGI_ACIDMAX, "NOISE ACID"}, {BK_BASS, ENGI_ACIDMAX, "NOTCH TECHNO"},
+    {BK_FX, ENGI_ACIDMAX, "NOTCH WASH"}, {BK_BASS, ENGI_ACIDMAX, "WIDE ACID"},
+    {BK_BASS, ENGI_ACIDMAX, "HI-END SHINE"}, {BK_BASS, ENGI_ACIDMAX, "PUMP COMP"},
+    {BK_BASS, ENGI_ACIDMAX, "RAT FUZZ"}, {BK_BASS, ENGI_ACIDMAX, "TUBE WARM"},
+    {BK_BASS, ENGI_ACIDMAX, "SLIDE MACHINE"}, {BK_BASS, ENGI_ACIDMAX, "SOFT ATTACK"},
+    {BK_LEAD, ENGI_ACIDMAX, "DRIFT LEAD"}, {BK_BASS, ENGI_ACIDMAX, "MC202"},
 };
 #define NBANK (sizeof BANK / sizeof BANK[0])
 static uint8_t bank_pi[NBANK];                       /* the preset index of each entry in its engine */
