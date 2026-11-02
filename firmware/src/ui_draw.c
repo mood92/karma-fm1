@@ -45,7 +45,7 @@ static void draw_head(void)
     static const char *const TAG[NTRK] = {"SYN1", "SYN2", "SYN3", "DRUM"};
     const page_t *pg = cur_page();
     const engine_t *e = ENGINES[TSEL->eng_req % NENGINES];
-    const char *title = ui.home ? "HOME" : pg->scope == SC_ENGINE && !is_drum(TSEL) ? e->page_title[pg->id[0] != P_E0] : pg->title;
+    const char *title = ui.home ? "SOUND" : pg->scope == SC_ENGINE && !is_drum(TSEL) ? e->page_title[pg->id[0] != P_E0] : pg->title;
     if (mlu.on)                                       /* MIDI LEARN on (2.6, GLO + F#3) */
         title = "LEARN";
     op_header(!is_drum(TSEL) && e != &ENG_GONE ? e->name : TAG[song.sel & 3u],   /* a synth track: its engine, by name */
@@ -402,6 +402,9 @@ static uint32_t graph_signature(void)
         h ^= (ui.frame / 2u + 1u) * 40503u;
     if (pg->graph == GR_SLCR && t->p[P_SLCR])        /* the SLICER's step playing */
         h ^= (sl[song.sel].idx + 1u) * 2654435761u;
+    if (pg->graph == GR_SETLIST)                     /* MAIN MENU: the setlist, its selection, the slots playing */
+        for (i = 0; i < SETLIST_N; i++)
+            h = (h ^ (setlist_id[i] * 3u + setlist_lane[i] + (i == set_sel) * 977u + (live_slot[setlist_lane[i] % NPART] == i) * 31u)) * 16777619u;
     if (pg->graph == GR_SLOTS)                       /* (a checksum over each slot) */
         for (i = 0; i < 4u; i++)
             h ^= (uint32_t)project_used(i) << (20u + i);
@@ -448,6 +451,101 @@ static void graph_browse(void)
             cv_rect(9, y + 6, 3, 3, sel ? C_WHITE : C_HI);
         cv_text(14, y, &FONT_S, tag, sel ? C_GRAY : C_DIM);
         cv_text(54, y, &FONT_S, nm, sel ? C_WHITE : C_GRAY);
+    }
+}
+
+/* MAIN MENU: the sound's kind (BANK) and name on track t: "KEYS", "M1 PIANO"; a stored sound: "LIVE" */
+static void sound_label(const track_t *t, char *kind, char *nm)
+{
+    const engine_t *e = ENGINES[t->eng_req % NENGINES];
+    uint32_t i;
+    str_cpy(kind, "USER", 6);
+    nm[0] = 0;
+    if (user_of(t) < UP_SLOTS) {
+        up_name(user_of(t), nm);
+        if (user_of(t) >= LIVE_UP_BASE)
+            str_cpy(kind, "LIVE", 6);
+        return;
+    }
+    if (!bank_ready)
+        bank_resolve();
+    for (i = 0; i < NBANK; i++)
+        if (BANK[i].e == t->eng_req && bank_pi[i] == t->preset) {
+            str_cpy(kind, BANK_KIND[BANK[i].kind], 6);
+            break;
+        }
+    if (e->npresets)
+        str_cpy(nm, e->presets[t->preset % e->npresets].name, 13);
+}
+/* MAIN MENU: SOUND (HOME): what this lane plays, large; its kind and lane; the last note; the setlist slot it came
+ * from; the lane's character. The four knobs under it are the sound's main ones (home_param) */
+static void graph_sound(track_t *t)
+{
+    char kind[6], nm[13], b[24], nb[8];
+    uint32_t lane = song.sel % NPART, s = live_slot[lane];
+    uint16_t lc = TE_COL[song.sel & 3u];
+    int32_t x, w;
+    int32_t m = meter_px(t->peak);
+    t->peak = 0;
+    op_lvl = m > op_lvl ? m : op_lvl > 4 ? op_lvl - 4 : 0;
+    sound_label(t, kind, nm);
+    w = text_w(&FONT_S, kind) + 8;
+    cv_rect(4, 4, w, 17, lc);
+    cv_text(8, 4, &FONT_S, kind, C_BLACK);
+    str_cpy(b, "LANE ", sizeof b);
+    fmt_int(b + 5, (int32_t)lane + 1);
+    str_cpy(b + str_len(b), "  ", sizeof b - str_len(b));
+    str_cpy(b + str_len(b), ENGINES[t->eng_req % NENGINES]->name, sizeof b - str_len(b));
+    cv_text(w + 12, 4, &FONT_S, b, C_DIM);
+    cv_text(4, 26, &FONT_L, nm, C_WHITE);
+    cv_text(4, 66, &FONT_S, "NOTE", C_DIM);
+    note_name(nb, op_note);
+    cv_text(4, 82, &FONT_L, op_note ? nb : "--", op_hit > 5u ? C_WHITE : op_note ? TE_G4 : C_DIM);
+    cv_text(84, 66, &FONT_S, "SLOT", C_DIM);
+    if (s < SETLIST_N) {
+        fmt_int(nb, (int32_t)s + 1);
+        x = cv_text(84, 82, &FONT_L, nb, lc);
+        cv_text(x + 4, 98, &FONT_S, "/20", C_DIM);
+    } else {
+        cv_text(84, 82, &FONT_L, "--", C_DIM);
+    }
+    op_sprite_scaled(song.sel % 3u, 200, 120 + (op_lvl > 20 ? -2 : 0), lc);
+}
+/* MAIN MENU: SETLIST: the 20 slots around the selected one: number, kind, name, lane; the selected one white, the
+ * slot each lane plays marked */
+static void graph_setlist(void)
+{
+    int32_t row, first;
+    if (!setlist_ready)
+        setlist_default();
+    first = clamp((int32_t)set_sel - 3, 0, SETLIST_N - 7);
+    for (row = 0; row < 7; row++) {
+        uint32_t s = (uint32_t)(first + row), id = setlist_id[s], ln = setlist_lane[s] % NPART, i, playing = 0;
+        int32_t y = 4 + row * 17;
+        char num[4], tag[6], nm[13];
+        int sel = s == set_sel;
+        for (i = 0; i < NPART; i++)
+            playing |= live_slot[i] == s;
+        fmt_int(num, (int32_t)s + 1);
+        if (id == 0xFFu) {
+            str_cpy(tag, "", 6);
+            str_cpy(nm, "EMPTY", 13);
+        } else {
+            str_cpy(tag, id < NBANK ? BANK_KIND[BANK[id].kind] : id >= NBANK + LIVE_UP_BASE ? "LIVE" : "USER", 6);
+            id_name(id, nm);
+        }
+        if (sel)
+            cv_rect(0, y - 1, 240, 17, TE_G1);
+        cv_text(26 - text_w(&FONT_S, num), y, &FONT_S, num, sel ? C_WHITE : C_DIM);
+        if (playing)
+            cv_rect(30, y + 5, 4, 6, TE_COL[ln & 3u]);
+        cv_text(38, y, &FONT_S, tag, sel ? C_GRAY : C_DIM);
+        cv_text(82, y, &FONT_S, nm, id == 0xFFu ? C_DIM : sel ? C_WHITE : C_GRAY);
+        if (id != 0xFFu) {
+            char lb[4] = "L";
+            fmt_int(lb + 1, (int32_t)ln + 1);
+            cv_text(220, y, &FONT_S, lb, TE_COL[ln & 3u]);
+        }
     }
 }
 
@@ -753,7 +851,8 @@ static void draw_graph(void)
     cv_begin(240, H_GRAPH, C_BLACK);
     cv_oy = G_OY;
     if (ui.home) {
-        graph_scope(c);
+        cv_oy = 0;
+        graph_sound((track_t *)t);                   /* MAIN MENU: SOUND, not the scope */
     } else if (drum_note) {                          /* a page the drum track has no use for */
         static const char *const L[2] = {"DRUM TRACK", "SEQ  TRACKS  GLO DRUMS"};
         cv_text((240 - text_w(&FONT_S, L[0])) / 2, 26, &FONT_S, L[0], C_HI);
@@ -805,6 +904,10 @@ static void draw_graph(void)
             cv_oy = 0;
             graph_user();
             break;
+        case GR_SETLIST:
+            cv_oy = 0;
+            graph_setlist();
+            break;
         default:
             if (big_page(pg)) {
                 cv_oy = 0;
@@ -824,12 +927,12 @@ static void draw_graph(void)
         }
     }
     if (!ui.home && !drum_note && !is_drum(t) && !big_page(pg) && pg->graph != GR_BROWSE && pg->graph != GR_SLOTS &&
-        pg->graph != GR_USER) {                      /* over a graph (they keep to the lower rows): the track's sound */
+        pg->graph != GR_USER && pg->graph != GR_SETLIST) {                      /* over a graph (they keep to the lower rows): the track's sound */
         cv_oy = 0;
         op_names(t);
     }
-    top = !ui.home && !drum_note && (pg->graph == GR_BROWSE || pg->graph == GR_SLOTS || pg->graph == GR_USER ||
-                                     big_page(pg));   /* these draw from the top */
+    top = ui.home || (!drum_note && (pg->graph == GR_BROWSE || pg->graph == GR_SLOTS || pg->graph == GR_USER ||
+                                     pg->graph == GR_SETLIST || big_page(pg)));   /* these draw from the top */
     cv_oy = 0;
     if (ui.hot_t && settings.zoom && !(top && big_page(pg) && !drum_note)) {   /* (the big values show it already) */                 /* focus (menu ZOOM): the touched value, large and white */
         int32_t x;
@@ -926,7 +1029,17 @@ static void draw_columns_set(void)
         draw_column(0, "No.", val, u, VAL(0u), -1, ICON_NONE);
         draw_column(1, "TAB", BROWSE_TAB_LABEL[ui.browse_kind], "", VAL(1u), -1, ICON_AUTO);
         draw_column(2, "FAV", i < NBANK && fav_get(i) ? "ON" : "--", "", i < NBANK ? VAL(2u) : C_DIM, -1, ICON_AUTO);
-        draw_column(3, "", "", "", C_HI, -1, ICON_AUTO);
+        fmt_int(val, (int32_t)set_sel + 1);                /* MAIN MENU: SET: this sound into that setlist slot */
+        draw_column(3, "SET", val, "", VAL(3u), -1, ICON_AUTO);
+        return;
+    }
+    if (cur_page()->graph == GR_SETLIST) {               /* MAIN MENU: SLOT MOVE SET CLEAR */
+        char u[8] = "/20";
+        fmt_int(val, (int32_t)set_sel + 1);
+        draw_column(0, "SLOT", val, u, VAL(0u), (int32_t)set_sel * 1000 / (SETLIST_N - 1), ICON_AUTO);
+        draw_column(1, "MOVE", "--", "", VAL(1u), -1, ICON_AUTO);
+        draw_column(2, "SET", "--", "", VAL(2u), -1, ICON_AUTO);
+        draw_column(3, "CLEAR", set_clear_arm ? "SURE?" : "--", "", set_clear_arm ? C_WHITE : VAL(3u), -1, ICON_AUTO);
         return;
     }
     if (cur_page()->graph == GR_USER) {                  /* SLOT, then three GO buttons */

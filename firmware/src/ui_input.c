@@ -432,6 +432,9 @@ static void edit_param(uint32_t slot, int32_t steps)
             ui.browse_pos = 0;
             if (browse_count(ui.browse_kind))              /* ALL included: jump to this tab's first sound too */
                 browse_go(0);
+        } else if (slot == 3u && !is_drum(TSEL) && steps > 0) {   /* MAIN MENU: SET: the sound shown (loaded on its
+                                                            * lane as it was picked) into the SETLIST's slot */
+            setlist_store(set_sel);
         } else if (slot == 2u && !is_drum(TSEL) && steps != 0) {   /* FAVORITE: user presets don't have one */
             uint32_t total = browse_count(ui.browse_kind);
             if (total) {
@@ -443,6 +446,31 @@ static void edit_param(uint32_t slot, int32_t steps)
                 }
             }
         }
+        return;
+    }
+    if (pg->graph == GR_SETLIST) {                        /* MAIN MENU: KNOB 1 the slot (its sound plays), 2 moves
+                                                            * it up / down the list, 3 stores the lane's sound
+                                                            * into it (right), 4 clears it (right twice) */
+        if (slot != 3u)
+            set_clear_arm = 0;
+        if (slot == 0u) {
+            set_sel = (uint8_t)clamp((int32_t)set_sel + (steps > 0 ? 1 : -1), 0, SETLIST_N - 1);
+            if (setlist_ready && setlist_id[set_sel] != 0xFFu)
+                live_key(set_sel);                       /* hear it: the slot's sound, on its own lane */
+        } else if (slot == 1u) {
+            setlist_move(set_sel, steps);
+        } else if (slot == 2u && steps > 0) {
+            setlist_store(set_sel);
+        } else if (slot == 3u && steps > 0) {
+            if (set_clear_arm) {
+                set_clear_arm = 0;
+                setlist_clear(set_sel);
+            } else {
+                set_clear_arm = 1;
+                ui_message("CLEAR? TURN AGAIN");
+            }
+        }
+        ui.force = 1;
         return;
     }
     if (pg->graph == GR_USER) {                           /* KNOB 1 slot; LOAD / ERASE / SAVE: GO buttons */
@@ -727,8 +755,10 @@ static void layer_tap(uint32_t layer)
     case LY_MIX:
         open_family(FAM_GLO);
         break;
-    case LY_LIVE:
-        open_family(FAM_LFO);
+    case LY_LIVE:                                         /* MAIN MENU: LFO tapped opens LIVE and keeps it */
+        ly_lock = LY_LIVE;
+        ui.layer = LY_LIVE;
+        ui.force = 1;
         break;
     case LY_SONG:                                         /* SAVE tapped: TRACKS -> the song, else the SAVE pages */
         if (on_song_page())
@@ -784,7 +814,10 @@ static int layers_input(uint32_t note_edges, uint32_t *pressed, uint32_t home)
         uint32_t keep = 1u << panel.btn[B_PLAY] | 1u << panel.btn[B_REC] | 1u << panel.btn[B_OCTDN] | 1u << panel.btn[B_OCTUP];
         eat = *pressed & ~keep;
         if (eat) {
+            uint32_t was_live = ly_lock == LY_LIVE;
             layer_unlock();
+            if (was_live)                                 /* MAIN MENU: out of LIVE one press goes where it says */
+                eat &= ly_bit[LY_LIVE];                   /* (LFO itself only closes LIVE) */
             if (eat & 1u << panel.btn[B_HOME])
                 home_eat = 1;
             *pressed &= ~eat;
@@ -1055,7 +1088,7 @@ static void ui_input(void)
     pressed &= ~(ly_bit[LY_FX] | ly_bit[LY_ERASE] | ly_bit[LY_ROLL] | ly_bit[LY_STEP] | ly_bit[LY_SCALE] | ly_bit[LY_MIX] |
                  ly_bit[LY_SONG] | ly_bit[LY_LIVE]);
     holds_input(pressed, fm1_ms);
-    pressed &= ~((on_song_page() ? 0u : 1u << panel.btn[B_REC]) | (1u << panel.btn[B_SAVE]));
+    pressed &= ~(on_song_page() ? 0u : 1u << panel.btn[B_REC]);   /* (MAIN MENU: SAVE is the BROWSE button) */
     if (layered || ui.hold_kind) {                      /* a layer / a hold: the rest waits */
         if ((s = panel_enc(EN_SELECT)) != 0) {           /* (the tempo always) */
             song.g[G_BPM] = (int16_t)clamp(song.g[G_BPM] + accel(EN_SELECT, s, 200), GP[G_BPM].min, GP[G_BPM].max);
@@ -1095,10 +1128,14 @@ static void ui_input(void)
     }
 #endif
     if (home == BT_TAP) {                               /* HOME acts on release: a hold opens the menu */
-        if (!ui.home && cur_page()->scope == SC_TRK && !vis_on)
-            vis_open();                                 /* HOME on HOME: the visualiser (ui_vis.c) */
-        else {
-            vis_on = 0;                                 /* (HOME again: back to the TRACKS screen) */
+        if (ui.home) {                                  /* MAIN MENU: SOUND -> TRACKS (the lanes' loops) */
+            ui.home = 0;
+            ui.page = (uint8_t)page_first(FAM_TRK);
+            page_entered();
+        } else if (cur_page()->scope == SC_TRK && !vis_on) {
+            vis_open();                                 /* TRACKS -> the visualiser (ui_vis.c) */
+        } else {
+            vis_on = 0;                                 /* -> SOUND */
             go_home();
         }
     }
@@ -1132,8 +1169,17 @@ static void ui_input(void)
         case B_ENV:
             open_family(FAM_ENV);
             break;
-        case B_LFO:
-            open_family(FAM_LFO);
+        case B_FX:                                      /* MAIN MENU: FX, ARP: their pages (no punch-in, no roll) */
+            open_family(FAM_FX);
+            break;
+        case B_ARP:
+            open_family(FAM_ARP);
+            break;
+        case B_SAVE:                                    /* MAIN MENU: BROWSE (the sound list), then USER, PROJECT, TOOLS */
+            open_family(FAM_SAVE);
+            break;
+        case B_SEQ:                                     /* MAIN MENU: SETLIST */
+            open_family(FAM_SEQ);
             break;
         default:
             break;
@@ -1142,6 +1188,8 @@ static void ui_input(void)
     if (song.seq_mode && cur_page()->scope == SC_STEP)
         seq_entry(notes);                                 /* (and the MIDI keyboard's: midi_entry) */
 
+    if (!ui.home && cur_page()->graph == GR_SETLIST && (s = panel_enc(EN_PRESET)) != 0)   /* MAIN MENU: SETLIST: */
+        edit_param(0u, s);                                                                   /* PRESETS = KNOB 1 */
     if ((s = panel_enc(EN_PRESET)) != 0 && (ui.home || cur_page()->graph == GR_BROWSE || cur_fam() == FAM_TRK)) {
         /* PRESETS browses the selected part's presets (all engines, then user presets) on HOME, the PRESETS
          * page and TRACKS only (the drum track: its kits); elsewhere a stray turn would throw away the sound

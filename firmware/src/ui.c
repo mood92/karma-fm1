@@ -127,7 +127,7 @@ static void ui_message(const char *s) { ui_say(s, ""); }
 static void page_entered(void)
 {
     const page_t *pg = cur_page();
-    song.seq_mode = !ui.home && pg->fam == FAM_SEQ;
+    song.seq_mode = 0;                                   /* MAIN MENU: no step entry (the STEP pages are gone) */
     if (!ui.home && pg->fam == FAM_GLO && pg->id[0] == G_CH1 && song.g[G_ROUTE]) {   /* (2.6) GLO > MIDI while MIDI 2 >
                                                                                    * IN sets a channel aside */
         if (song.g[G_ROUTE] == 1)
@@ -343,14 +343,9 @@ static void page_fix(void)
     page_entered();
 }
 
-static void go_home(void)
+static void go_home(void)                           /* MAIN MENU: HOME is SOUND (ui.home), TRACKS one tap on */
 {
-#if FELUCCA_ARRANGER
-    ui.home = 0;
-    ui.page = (uint8_t)page_first(FAM_TRK);
-#else
     ui.home = 1;
-#endif
     ui.entry_open = 0;
     ui.hot_t = 0;
     song.seq_mode = 0;
@@ -767,6 +762,87 @@ static void id_name(uint32_t id, char *b)
         up_name(id - NBANK, b);
 }
 static void setlist_name(uint32_t s, char *b) { id_name(setlist_id[s % SETLIST_N], b); }
+/* MAIN MENU: the reserved user preset slot s's snapshot goes in: the one it already holds, else one no other slot
+ * points at (slots can be reordered on SETLIST, so slot s no longer always owns LIVE_UP_BASE + s) */
+static uint32_t setlist_up_for(uint32_t s)
+{
+    uint32_t k, j;
+    if (setlist_id[s] != 0xFFu && setlist_id[s] >= NBANK + LIVE_UP_BASE && setlist_id[s] < NBANK + UP_SLOTS)
+        return setlist_id[s] - NBANK;
+    for (k = LIVE_UP_BASE + s; k < LIVE_UP_BASE + s + SETLIST_N; k++) {
+        uint32_t kk = LIVE_UP_BASE + (k - LIVE_UP_BASE) % SETLIST_N, used = 0;
+        for (j = 0; j < SETLIST_N; j++)
+            used |= j != s && setlist_id[j] == NBANK + kk;
+        if (!used)
+            return kk;
+    }
+    return LIVE_UP_BASE + s;
+}
+static uint8_t set_sel;                              /* MAIN MENU: the slot SETLIST points at (BROWSE's SET too) */
+static uint8_t set_clear_arm;                        /* SETLIST's CLEAR: turned once, armed; again to clear */
+/* MAIN MENU: snapshot the selected lane's sound now (tweaks and all) into slot s; 0 done, 1 flash error */
+static int setlist_store(uint32_t s)
+{
+    char b[4], nb[20], nm[13];
+    uint32_t k;
+    int rc;
+    if (s >= SETLIST_N || is_drum(TSEL))
+        return 1;
+    if (!setlist_ready)
+        setlist_default();
+    k = setlist_up_for(s);
+    rc = up_store(k, 0);                              /* snapshot the lane's sound now, tweaks and all */
+    if (rc == 2) {                                    /* flash error: nothing changed, say so and stop */
+        ui_message("SAVE ERROR");
+        return 1;
+    }
+    setlist_id[s] = (uint8_t)(NBANK + k);
+    setlist_lane[s] = (uint8_t)song.sel;
+    live_slot[song.sel] = (uint8_t)s;
+    settings_later = 1;                               /* the slot's own (id, lane) bytes: with the settings, once stopped */
+    fmt_int(b, (int32_t)s + 1);
+    str_cpy(nb, b, sizeof nb);                        /* MAIN MENU 1.9: "STORED SLOT n NAME", not just the number */
+    str_cpy(nb + str_len(nb), " ", sizeof nb - str_len(nb));
+    setlist_name(s, nm);
+    str_cpy(nb + str_len(nb), nm, sizeof nb - str_len(nb));
+    ui_say("STORED SLOT ", nb);
+    return 0;
+}
+static void setlist_clear(uint32_t s)               /* MAIN MENU: SETLIST's CLEAR */
+{
+    char b[4];
+    uint32_t i;
+    if (s >= SETLIST_N)
+        return;
+    if (!setlist_ready)
+        setlist_default();
+    setlist_id[s] = 0xFFu;
+    for (i = 0; i < NPART; i++)
+        if (live_slot[i] == s)
+            live_slot[i] = 0xFFu;
+    settings_later = 1;
+    fmt_int(b, (int32_t)s + 1);
+    ui_say("CLEARED SLOT ", b);
+}
+static void setlist_move(uint32_t s, int32_t d)      /* MAIN MENU: SETLIST's MOVE: slot s one up / down */
+{
+    uint32_t to, i;
+    uint8_t id, ln;
+    if (s >= SETLIST_N || !d)
+        return;
+    if (!setlist_ready)
+        setlist_default();
+    to = (uint32_t)clamp((int32_t)s + (d > 0 ? 1 : -1), 0, SETLIST_N - 1);
+    if (to == s)
+        return;
+    id = setlist_id[s], ln = setlist_lane[s];
+    setlist_id[s] = setlist_id[to], setlist_lane[s] = setlist_lane[to];
+    setlist_id[to] = id, setlist_lane[to] = ln;
+    for (i = 0; i < NPART; i++)
+        live_slot[i] = live_slot[i] == s ? (uint8_t)to : live_slot[i] == to ? (uint8_t)s : live_slot[i];
+    set_sel = (uint8_t)to;
+    settings_later = 1;
+}
 /* a slot key (the LIVE layer): recall the slot's sound on the selected track; with OCT+ held, store the sound
  * the track has now into the slot instead */
 static void live_key(uint32_t s)
@@ -782,23 +858,9 @@ static void live_key(uint32_t s)
         return;
     }
     if (live_store || ((fm1_in.buttons >> panel.btn[B_OCTUP]) & 1u)) {
-        uint32_t k = LIVE_UP_BASE + s;                /* MAIN MENU 1.2: this slot's own reserved user preset */
-        int rc;
         live_store = 0;
         live_store_t = 0;
-        rc = up_store(k, 0);                          /* snapshot the lane's sound now, tweaks and all */
-        if (rc == 2) {                                /* flash error: nothing changed, say so and stop */
-            ui_message("SAVE ERROR");
-            return;
-        }
-        setlist_id[s] = (uint8_t)(NBANK + k);
-        setlist_lane[s] = (uint8_t)song.sel;
-        settings_later = 1;                          /* the slot's own (id, lane) bytes: with the settings, once stopped */
-        str_cpy(nb, b, sizeof nb);                    /* MAIN MENU 1.9: "STORED SLOT n NAME", not just the number */
-        str_cpy(nb + str_len(nb), " ", sizeof nb - str_len(nb));
-        setlist_name(s, nm);
-        str_cpy(nb + str_len(nb), nm, sizeof nb - str_len(nb));
-        ui_say("STORED SLOT ", nb);
+        setlist_store(s);                             /* MAIN MENU: the shared STORE (SETLIST and BROWSE use it too) */
         return;
     }
     if (setlist_id[s] == 0xFFu) {
@@ -814,6 +876,7 @@ static void live_key(uint32_t s)
         }
     }
     live_slot[song.sel] = (uint8_t)s;
+    set_sel = (uint8_t)s;                             /* (SETLIST and BROWSE's SET point at the slot last played) */
     str_cpy(nb, b, sizeof nb);                        /* MAIN MENU 1.9: "SLOT n NAME", not just the number */
     str_cpy(nb + str_len(nb), " ", sizeof nb - str_len(nb));
     setlist_name(s, nm);

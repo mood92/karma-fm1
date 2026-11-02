@@ -36,7 +36,8 @@ static void layers_init(void)
 {
     uint32_t l;
     for (l = LY_FX; l < LY_COUNT; l++)
-        ly_bit[l] = 1u << panel.btn[LAYER_BTN[l]];
+        ly_bit[l] = l == LY_FX || l == LY_ROLL || l == LY_STEP || l == LY_SONG ? 0u   /* MAIN MENU: no punch-in, roll, */
+                    : 1u << panel.btn[LAYER_BTN[l]];                                  /* steps or song layers */
     dyn_bit[0] = 1u << panel.btn[B_OCTDN];
     dyn_bit[1] = 1u << panel.btn[B_OCTUP];
     ft_btn_mask = 1u << panel.btn[B_REC];

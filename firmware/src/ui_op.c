@@ -56,7 +56,7 @@ static void op_header(const char *tag, uint16_t tc, const char *title, uint32_t 
             return;
         }
         str_cpy(b, title, 10);
-        while (b[0] && w + 8 + text_w(&FONT_S, b) > 98)
+        while (b[0] && w + 8 + text_w(&FONT_S, b) > 101)
             b[str_len(b) - 1u] = 0;
         cv_text(w + 8, 2, &FONT_S, b, TE_G3);
     }
