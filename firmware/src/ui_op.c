@@ -24,7 +24,9 @@ static void op_box(int32_t x, int32_t y, int32_t w, int32_t h, uint16_t c)   /* 
     cv_rect(x + w - 1, y, 1, h, c);
 }
 
-/* the header: [tag] title | BPM, play / stop, the four beats, REC, the battery */
+#include "mm_logo.h"
+static void op_sprite_wh(const uint8_t *d, int32_t w, int32_t h, int32_t x0, int32_t y0, int flip, uint16_t c);
+/* the header: [tag] title | BPM, play / stop, the four beats, REC, the battery; the Main Menu mark beside the tempo */
 static void op_header(const char *tag, uint16_t tc, const char *title, uint32_t *cache)
 {
     char b[12];
@@ -42,10 +44,11 @@ static void op_header(const char *tag, uint16_t tc, const char *title, uint32_t 
         op_box(2, 1, w, 18, tc);
         te_text_c(2 + w / 2, 2, tag, tc);
         str_cpy(b, title, 10);
-        while (b[0] && w + 8 + text_w(&FONT_S, b) > 122)
+        while (b[0] && w + 8 + text_w(&FONT_S, b) > 98)
             b[str_len(b) - 1u] = 0;
         cv_text(w + 8, 2, &FONT_S, b, TE_G3);
     }
+    op_sprite_wh(MM_LOGO, MM_LOGO_W, MM_LOGO_H, 102, 0, 0, C_WHITE);
     fmt_int(b, song.g[G_BPM]);
     cv_text(150 - text_w(&FONT_S, b), 2, &FONT_S, b, ui.bpm_t ? C_WHITE : TE_G4);
     if (playing) {
@@ -149,7 +152,7 @@ static void op_knobs(const char *const lab[4], const char *const val[4], const c
  * marked white, the one that records marked red */
 static void op_trackbar(uint32_t *cache)
 {
-    static const char *const NAME[NTRK] = {"1", "2", "3", "DRUM"};
+    static const char *const NAME[NTRK] = {"LANE 1", "LANE 2", "LANE 3", "DRUM"};
     uint32_t i, sig = 1u + song.sel + song.rec * 16u + song.solo * 256u;
     for (i = 0; i < NTRK; i++)
         sig = sig * 3u + (trk_silent(&trk[i]) != 0);
@@ -157,19 +160,19 @@ static void op_trackbar(uint32_t *cache)
         return;
     *cache = sig;
     cv_begin(240, OP_BAR_H, C_BLACK);
-    for (i = 0; i < NTRK; i++) {
-        int32_t x = 4 + 58 * (int32_t)i;
+    for (i = 0; i < NPART; i++) {
+        int32_t x = 4 + 78 * (int32_t)i;
         uint32_t sel = song.sel == i, mute = trk_silent(&trk[i]) != 0;
         uint16_t c = mute && !sel ? TE_DIM[i] : TE_COL[i];
         if (sel)
-            cv_rect(x, 3, 55, 22, c);
+            cv_rect(x, 3, 74, 22, c);
         else
-            op_box(x, 3, 55, 22, c);
-        te_text_c(x + 27, 6, NAME[i], sel ? C_BLACK : mute ? TE_G3 : c);
+            op_box(x, 3, 74, 22, c);
+        te_text_c(x + 37, 6, NAME[i], sel ? C_BLACK : mute ? TE_G3 : c);
         if ((song.rec >> i) & 1u)
-            te_disc(x + 47, 14, 3, TE_RED);
+            te_disc(x + 66, 14, 3, TE_RED);
         else if ((song.solo >> i) & 1u)
-            cv_rect(x + 45, 11, 6, 6, sel ? C_BLACK : C_WHITE);
+            cv_rect(x + 64, 11, 6, 6, sel ? C_BLACK : C_WHITE);
     }
     cv_blit(0, OP_BAR_Y);
 }

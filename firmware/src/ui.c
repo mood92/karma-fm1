@@ -730,7 +730,7 @@ static const param_desc_t *home_param(uint32_t k, int16_t **vp)
 /* select track i (KNOB 1 on TRACKS, the editor): its sound, pages and pattern from now on */
 static void track_select(uint32_t i)
 {
-    if (i >= NTRK || i == song.sel)
+    if (i >= NPART || i == song.sel)                 /* (MAIN MENU: the three lanes; the drum track stays out of reach) */
         return;
     song.sel = (uint8_t)i;
     rec_follow(i);                                   /* LIVE: recording follows the selected track */

@@ -197,7 +197,7 @@ static const param_desc_t GP[G_COUNT] = {
     [G_CLRSEQ] = PE("CLRSQ", N_GO, 0),
     [G_INITSND] = PE("INIT", N_GO, 0),
     [G_DRCH] = PE("CH4", N_MCH, 10),                  /* GM drum part (track 4) MIDI channel, 0 = OFF (2.6: as GLO > MIDI's CH1..3) */
-    [G_DRLVL] = PD("LVL", F_INT, 0, 127, 100),
+    [G_DRLVL] = PD("LVL", F_INT, 0, 127, 0),
     [G_DRREV] = PD("REV", F_INT, 0, 127, 0),          /* (dry until asked for; SLOOP: 16) */
     [G_DUST] = PD("DUST", F_PCT, 0, 127, 0),
     [G_DUCK] = PD("DUCK", F_PCT, 0, 127, 0),
