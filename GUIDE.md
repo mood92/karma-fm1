@@ -625,6 +625,11 @@ The song's settings can only be edited while it is stopped (*STOP FIRST*). An em
 
 ---
 
+### SEQ-SONG additions (this build)
+* **SEQ > VARY / VARY 2:** chance per hit level (GHOST, SOFT, HARD), AMOUNT, VEL RND, RATCHET chance, LOOK (LIVE or HOLD) and SEED. Hold a synth step and turn SELECT to give that step its own chance. Notes stay on the grid.
+* **SONG screen:** ALGO picks a track, SELECT mutes it for the selected entry only, PRESET right duplicates the entry, left deletes it (stopped only).
+* Details and limits: `docs/SEQ-SONG.md`.
+
 ## 15. The screens
 
 | Screen | How to get there | What it shows · what the knobs do |
