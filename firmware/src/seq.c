@@ -816,9 +816,79 @@ static uint32_t fill_last_bar = 0xFFFFFFFFu; /* clk_beat / 4 of the last bar see
 enum { PD_FWD, PD_REV, PD_PEND, PD_RAND, PD_WALK, PD_COUNT };
 static uint8_t pl_dir[NTRK], pl_jump[NTRK], pl_pos[NTRK];
 static uint8_t pl_chance[NTRK] = {64, 64, 64, 64}, pl_stride[NTRK] = {1, 1, 1, 1};
+/* ---- SEQ > VARY (2026-11): chance by the hit's own level (GHOST, SOFT, HARD), a synth step's own chance (its flags, SF_CH_*),
+ * the AMOUNT of all of it, velocity randomness and ratchet chance. LOOK LIVE: every roll is new; HOLD: the same roll for the same
+ * SEED, track, step and note on every pass, so a variation you like stays until you turn SEED. Settings of the FM-1, not in a
+ * project (the step chances are: they are in the steps). A chance is 0..127, 127 = always (as pl_chance); AMOUNT 0 = every
+ * hit plays at its velocity. Nothing is rolled while recording (what you play is what you hear). Dropped hits make no sound,
+ * no MIDI note and no ratchet */
+static uint8_t vr_lv[NTRK][3] = {{127, 127, 127}, {127, 127, 127}, {127, 127, 127}, {127, 127, 127}};   /* GHOST SOFT HARD */
+static uint8_t vr_amt[NTRK] = {127, 127, 127, 127}, vr_vel[NTRK], vr_rat[NTRK] = {127, 127, 127, 127};
+static uint8_t vr_look, vr_seed;
+static uint32_t vr_hash(uint32_t a, uint32_t b, uint32_t c, uint32_t d)
+{
+    uint32_t h = a * 0x9E3779B1u ^ (b + 0x7F4A7C15u) * 0x85EBCA77u ^ (c + 0x165667B1u) * 0xC2B2AE3Du ^ (d + 1u) * 0x27D4EB2Fu;
+    h ^= h >> 15;
+    h *= 0x2C1B3C6Du;
+    h ^= h >> 12;
+    h *= 0x297A2D39u;
+    return h ^ h >> 15;
+}
+/* a roll: 1 = it plays. c: the chance, 0..127; salt tells the rolls of one step apart (note, lane, ratchet hit) */
+static uint32_t vr_roll(const track_t *t, uint32_t idx, uint32_t salt, uint32_t c)
+{
+    uint32_t ti = (uint32_t)(t - trk) % NTRK, r;
+    if (c >= 127u || song.rec)
+        return 1u;
+    c = 127u - (127u - c) * vr_amt[ti] / 127u;      /* AMOUNT 0: always, 127: the chance as set */
+    if (c >= 127u)
+        return 1u;
+    r = vr_look ? vr_hash(vr_seed, ti, idx, salt) : rng();
+    return r % 127u < c;
+}
+static uint32_t vr_step_c127(const step_t *s)       /* a synth step's own chance: code 0 always .. 31 never */
+{
+    uint32_t code = (uint32_t)(s->flags & SF_CH_MASK) >> SF_CH_SH;
+    return code ? (31u - code) * 127u / 31u : 127u;
+}
+static uint32_t vr_lvl_c127(uint32_t ti, uint32_t lvl)
+{
+    return lvl == LV_GHOST ? vr_lv[ti][0] : lvl == LV_SOFT ? vr_lv[ti][1] : lvl == LV_HARD ? vr_lv[ti][2] : 127u;
+}
+/* a velocity moved by up to +- VEL RND (scaled by AMOUNT), at least 1, at most 127 */
+static uint32_t vr_vel_adj(const track_t *t, uint32_t idx, uint32_t salt, uint32_t vel)
+{
+    uint32_t ti = (uint32_t)(t - trk) % NTRK, r = (uint32_t)vr_vel[ti] * vr_amt[ti] / 127u, h;
+    int32_t v;
+    if (!r || song.rec)
+        return vel;
+    h = vr_look ? vr_hash(vr_seed, ti, idx, salt + 100u) : rng();
+    v = (int32_t)vel + (int32_t)(h % (2u * r + 1u)) - (int32_t)r;
+    return (uint32_t)clamp(v, 1, 127);
+}
+/* the notes (synth: bit per note) or lanes (drums) of step idx that their level's chance drops, rolled once as the step starts */
+static uint16_t vr_drops(const track_t *t, uint32_t idx)
+{
+    uint32_t ti = (uint32_t)(t - trk) % NTRK, i, m, out = 0;
+    if (is_drum(t)) {
+        const dstep_t *d = &t->dstep[idx % NSTEP];
+        m = dstep_mask(d);
+        for (i = 0; m; i++, m >>= 1)
+            if ((m & 1u) && !vr_roll(t, idx, 8u + i, vr_lvl_c127(ti, dstep_lvl(d, i))))
+                out |= 1u << i;
+    } else {
+        const step_t *s = &t->step[idx % NSTEP];
+        for (i = 0; i < s->n && i < 4u; i++)
+            if (!vr_roll(t, idx, i, vr_lvl_c127(ti, (s->lvl >> (2u * i)) & 3u)))
+                out |= 1u << i;
+    }
+    return (uint16_t)out;
+}
 static uint32_t step_plays(const track_t *t, uint32_t idx)   /* its condition holds now */
 {
     uint32_t c = step_fill(t, idx);
+    if (!is_drum(t) && !vr_roll(t, idx, 15u, vr_step_c127(&t->step[idx % NSTEP])))
+        return 0u;                                   /* (VARY: the step's own chance) */
     if (c == FC_CHANCE)
         return rng() % 127u < pl_chance[(uint32_t)(t - trk) % NTRK];
     return c == FC_FILL ? fill_now : c == FC_NOFILL ? !fill_now : 1u;
@@ -1971,14 +2041,16 @@ static void seq_step(track_t *t, const step_t *s, uint32_t slen, uint32_t skip)
     for (i = 0; i < s->n; i++)
         if (roll_has(t, s->note[i]))
             skip |= 1u << i;                        /* (a roll plays it) */
+    skip |= t->vr_drop;                             /* (VARY: its chance dropped it) */
     for (i = 0; i < s->n; i++)
         if (!((skip >> i) & 1u)) {
+            uint32_t vel = vr_vel_adj(t, t->seq_idx, i, step_vel(s, i));   /* (VARY: VEL RND) */
             if (slide_in)
-                trk_note_on(t, s->note[i], step_vel(s, i));
+                trk_note_on(t, s->note[i], vel);
             else                                    /* (STRUM: a chord's notes one after the other) */
-                trk_note_chord(t, s->note, s->n, i, step_vel(s, i));
+                trk_note_chord(t, s->note, s->n, i, vel);
             if (!slide_in || !(mo_set[trk_index(t) % NTRK][s->note[i] >> 5] & (1u << (s->note[i] & 31u))))
-                seq_out_on(t, s->note[i], step_vel(s, i));   /* (a slide into the same note: one MIDI note) */
+                seq_out_on(t, s->note[i], vel);     /* (a slide into the same note: one MIDI note) */
         }
     if (slide_in)                                   /* release what is not held over */
         for (i = 0; i < t->seq_n; i++) {
@@ -2000,12 +2072,13 @@ static void seq_step(track_t *t, const step_t *s, uint32_t slen, uint32_t skip)
 /* play one drum step: each lane a hit (skip: lanes already played by live recording, or rolling) */
 static void drum_step(track_t *t, const dstep_t *s, uint32_t skip)
 {
-    uint32_t l, m = dstep_mask(s) & ~skip & ~roll_lanes(t) & ~(uint32_t)drum_mute;
+    uint32_t l, m = dstep_mask(s) & ~skip & ~roll_lanes(t) & ~(uint32_t)drum_mute & ~(uint32_t)t->vr_drop;   /* (VARY: dropped lanes) */
     seq_out_track_off(t);                           /* the last step's hits end here */
     for (l = 0; m; l++, m >>= 1)
         if (m & 1u) {
-            trk_note_on(t, LANE_NOTE[l], lvl_vel(dstep_lvl(s, l), 100));
-            seq_out_on(t, LANE_NOTE[l], lvl_vel(dstep_lvl(s, l), 100));
+            uint32_t vel = vr_vel_adj(t, t->seq_idx, 20u + l, lvl_vel(dstep_lvl(s, l), 100));   /* (VARY: VEL RND) */
+            trk_note_on(t, LANE_NOTE[l], vel);
+            seq_out_on(t, LANE_NOTE[l], vel);
         }
 }
 
@@ -2026,8 +2099,13 @@ static void seq_ratchets(track_t *t, uint32_t into, uint32_t slen)
             done = (t->rat_lanes >> (2u * i)) & 3u;
             if (h > done && h < hits) {
                 t->rat_lanes = (t->rat_lanes & ~(3u << (2u * i))) | h << (2u * i);
-                trk_note_on(t, LANE_NOTE[i], lvl_vel(dstep_lvl(s, i), 100));
-                seq_out_on(t, LANE_NOTE[i], lvl_vel(dstep_lvl(s, i), 100));
+                if ((t->vr_drop >> i) & 1u || !vr_roll(t, t->seq_idx, 48u + 4u * i + h, vr_rat[(uint32_t)(t - trk) % NTRK]))
+                    continue;                       /* (VARY: a dropped lane, or this ratchet hit's chance) */
+                {
+                    uint32_t vel = vr_vel_adj(t, t->seq_idx, 48u + 4u * i + h, lvl_vel(dstep_lvl(s, i), 100));
+                    trk_note_on(t, LANE_NOTE[i], vel);
+                    seq_out_on(t, LANE_NOTE[i], vel);
+                }
             }
         }
         return;
@@ -2042,11 +2120,14 @@ static void seq_ratchets(track_t *t, uint32_t into, uint32_t slen)
                 continue;
             h = into * hits / slen;
             if (h > t->rat_done[i] && h < hits) {
-                uint32_t j;
+                uint32_t j, vel;
                 t->rat_done[i] = (uint8_t)h;
+                if ((t->vr_drop >> i) & 1u || !vr_roll(t, t->seq_idx, 48u + 4u * i + h, vr_rat[(uint32_t)(t - trk) % NTRK]))
+                    continue;                       /* (VARY: a dropped note, or this ratchet hit's chance) */
+                vel = vr_vel_adj(t, t->seq_idx, 48u + 4u * i + h, step_vel(s, i));
                 trk_note_off(t, s->note[i]);
-                trk_note_on(t, s->note[i], step_vel(s, i));
-                seq_out_on(t, s->note[i], step_vel(s, i));
+                trk_note_on(t, s->note[i], vel);
+                seq_out_on(t, s->note[i], vel);
                 t->seq_off = slen / hits * (uint32_t)t->p[P_SGATE] / 128u;
                 for (j = 0; j < t->seq_n && t->seq_notes[j] != s->note[i]; j++)
                     ;
@@ -2122,6 +2203,7 @@ static void seq_tick(track_t *t, uint32_t adv)
         if (erasing(t))
             erase_step(t, idx);                      /* EDIT + key held: gone as it passes */
         t->seq_skip = (uint8_t)!step_plays(t, idx);
+        t->vr_drop = t->seq_skip ? 0u : vr_drops(t, idx);   /* (VARY: which of its notes / lanes the level chances drop) */
         if (t->seq_skip) {                           /* its fill condition fails: as a REST with no lock */
             lock_step(t, NSTEP);                     /* (no step has locks there: the bases are back) */
             t->rskip_lanes = 0;

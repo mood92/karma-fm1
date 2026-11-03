@@ -256,7 +256,7 @@ static void ed_step_in(track_t *t, uint32_t i, const uint8_t *a, uint32_t na)
         for (k = 0; k < 4u; k++)
             st->note[k] = a[1 + k] & 0x7Fu;
         st->time = (uint8_t)(a[5] > ST_REST ? ST_REST : a[5]);
-        st->flags = a[6] & (SF_ACCENT | SF_SLIDE);
+        st->flags = a[6] & (SF_ACCENT | SF_SLIDE | SF_CH_MASK);   /* (VARY: and the step's chance) */
         st->vel = a[7] & 0x7Fu;
         if (na >= 11u) {
             st->lvl = (uint8_t)((a[8] & 0x7Fu) | (a[9] & 1u) << 7);

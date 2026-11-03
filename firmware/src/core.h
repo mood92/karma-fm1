@@ -116,6 +116,9 @@ enum {                          /* global parameters */
     G_KNOBS,                                /* GLO > MIDI 3: CC 70-77 the EDIT knobs, or the GM map (a setting of the FM-1) */
     G_GKROOT, G_GKMODE, G_GKPROG, G_GKBARS, /* SEQ > HARMONY (gen_seq.c): KEY MODE as track 1's ROOT SCL (ui_studio.c gen_ui_sync), */
                                             /* PROG BARS the FM-1's, not in a project */
+    G_VRGHO, G_VRSFT, G_VRHRD, G_VRAMT,     /* SEQ > VARY (seq.c vr_*; ui_studio.c vary_ui_sync): the selected track's chance of a GHOST, */
+    G_VRVEL, G_VRRAT, G_VRLOOK, G_VRSEED,   /* SOFT, HARD hit, the AMOUNT of it all, its VEL randomness, the RATCHET chance; LOOK (live / */
+                                            /* frozen) and SEED the FM-1's. Settings of the FM-1, not in a project (at the end: no id moves) */
     G_COUNT
 };
 
@@ -199,6 +202,10 @@ typedef struct {
 enum { ST_NOTE, ST_TIE, ST_REST };
 #define SF_ACCENT 1u
 #define SF_SLIDE 2u
+/* (VARY, 2026-11) a synth step's chance, 5 bits of the flags byte (bits 2..6): 0 = plays every time (every pattern made before
+ * VARY), 1..31 = a lower chance, 31 = never (seq.c vr_step_c127). A step with no flags above bit 1 reads exactly as before */
+#define SF_CH_SH 2u
+#define SF_CH_MASK 0x7Cu
 /* the dynamics of a note or a drum hit (2 bits each in the steps): played without velocity
  * (OCT- / OCT+ held on the drum track, the step page) or from a MIDI velocity */
 enum { LV_NORM, LV_GHOST, LV_SOFT, LV_HARD };
@@ -276,6 +283,7 @@ typedef struct track {
     uint8_t seq_n;
     uint8_t seq_hold;            /* last step slides: keep the notes until the next step */
     uint8_t seq_skip;            /* the step playing failed its fill condition: nothing of it sounds */
+    uint16_t vr_drop;            /* VARY: the notes (synth: bit per note) / lanes (drums) of the step playing that its chance dropped */
     uint8_t slide_glide;         /* next legato note glides (slide) */
     uint32_t seq_off;            /* units to the note-off of the step's notes */
     uint8_t seq_active;          /* any step programmed */

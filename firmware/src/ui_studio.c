@@ -265,6 +265,28 @@ static void play_ui_sync(void)
     pl_jump[s] = (uint8_t)clamp(g[G_PLJMP], 0, 127);
     pl_stride[s] = (uint8_t)clamp(g[G_PLSTR], 1, 7);
 }
+/* SEQ > VARY: GHOST SOFT HARD AMOUNT VEL RND RATCHET are the selected track's (seq.c vr_*), LOOK and SEED the FM-1's; shown and set
+ * here once a frame, as SEQ > PLAY */
+static void vary_ui_sync(void)
+{
+    static uint8_t sel_was = 0xFF;
+    uint32_t s = song.sel % NTRK;
+    int16_t *g = song.g;
+    if (s != sel_was) {
+        sel_was = (uint8_t)s;
+        g[G_VRGHO] = vr_lv[s][0], g[G_VRSFT] = vr_lv[s][1], g[G_VRHRD] = vr_lv[s][2];
+        g[G_VRAMT] = vr_amt[s], g[G_VRVEL] = vr_vel[s], g[G_VRRAT] = vr_rat[s];
+        g[G_VRLOOK] = vr_look, g[G_VRSEED] = vr_seed;
+    }
+    vr_lv[s][0] = (uint8_t)clamp(g[G_VRGHO], 0, 127);
+    vr_lv[s][1] = (uint8_t)clamp(g[G_VRSFT], 0, 127);
+    vr_lv[s][2] = (uint8_t)clamp(g[G_VRHRD], 0, 127);
+    vr_amt[s] = (uint8_t)clamp(g[G_VRAMT], 0, 127);
+    vr_vel[s] = (uint8_t)clamp(g[G_VRVEL], 0, 40);
+    vr_rat[s] = (uint8_t)clamp(g[G_VRRAT], 0, 127);
+    vr_look = (uint8_t)clamp(g[G_VRLOOK], 0, 1);
+    vr_seed = (uint8_t)clamp(g[G_VRSEED], 0, 99);
+}
 static void gen_ui_sync(void)
 {
     static uint8_t sel_was = 0xFF;
@@ -484,6 +506,7 @@ static void pads_tick(void)                             /* once a frame: the hit
     acid_gen_sync();
     gen_ui_sync();
     play_ui_sync();
+    vary_ui_sync();
     hex_ui_sync();
     for (i = 0; i < DRUM_LANES; i++) {
         if ((hits >> i) & 1u) pad_lit[i] = 6;

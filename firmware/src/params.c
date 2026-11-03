@@ -61,6 +61,7 @@ static const char *const N_SYNC[] = {"INT", "USB", "TRS"};   /* G_SYNC: the temp
 static const char *const N_GO[] = {"--", "GO"};
 static const char *const N_DGMODE[] = {"OFF", "MAP", "EUCL"};
 static const char *const N_PLDIR[] = {"FWD", "REV", "PEND", "RAND", "WALK"};
+static const char *const N_VRLOOK[] = {"LIVE", "HOLD"};     /* SEQ > VARY: re-rolled on every pass of the loop, or the same each time (SEED) */
 static const char *const N_KNOBS[] = {"GM", "70-77", "1-8", "AUTO", "PANEL"};
 /* HEX (hex_drums.c: the LXR's drum voices, lxr_dsp.c): HM_*, HW_*, HC_* (the transients), HF_* */
 static const char *const N_HXMODEL[] = {"DRUM", "SNARE", "CLAP", "CYM", "HAT"};
@@ -266,6 +267,14 @@ static const param_desc_t GP[G_COUNT] = {
     [G_GKMODE] = PE("MODE", N_GKMODE, 0),
     [G_GKPROG] = PE("PROG", N_GKPROG, 1),
     [G_GKBARS] = PE("BARS", N_GKBARS, 1),
+    [G_VRGHO] = PD("GHOST", F_PCT, 0, 127, 127),    /* SEQ > VARY (seq.c vr_*): the selected track's chance that a GHOST hit plays, */
+    [G_VRSFT] = PD("SOFT", F_PCT, 0, 127, 127),     /* a SOFT one, a HARD one (a step's own chance is on the STEP layer), */
+    [G_VRHRD] = PD("HARD", F_PCT, 0, 127, 127),
+    [G_VRAMT] = PD("AMOUNT", F_PCT, 0, 127, 127),   /* how much of all of it is heard: 0 = every hit plays (a tight groove) */
+    [G_VRVEL] = PD("VEL RND", F_INT, 0, 40, 0),     /* a hit's velocity moves by up to +- this */
+    [G_VRRAT] = PD("RATCHET", F_PCT, 0, 127, 127),  /* the chance each further ratchet hit plays */
+    [G_VRLOOK] = PE("LOOK", N_VRLOOK, 0),           /* LIVE: new every pass. HOLD: the same every pass, for this SEED */
+    [G_VRSEED] = PD("SEED", F_INT, 0, 99, 0),
     [G_DGMODE] = PE("MODE", N_DGMODE, 0),           /* SEQ > DRUM GEN (gen_seq.c) */
     [G_DGX] = PD("MAP X", F_INT, 0, 127, 64),
     [G_DGY] = PD("MAP Y", F_INT, 0, 127, 64),
@@ -521,6 +530,8 @@ static const page_t PAGES[] = {
     {"STEP", FAM_SEQ, SC_STEP, GR_ROLL, {0, 1, 2, 3}},
     {"PATTERN", FAM_SEQ, SC_TRACK, GR_STEPS, {P_SLEN, P_SDIV, P_SSWING, P_SGATE}},
     {"PLAY", FAM_SEQ, SC_GLOBAL, GR_NONE, {G_PLDIR, G_PLCHN, G_PLJMP, G_PLSTR}},   /* the order steps play in, chance */
+    {"VARY", FAM_SEQ, SC_GLOBAL, GR_NONE, {G_VRGHO, G_VRSFT, G_VRHRD, G_VRAMT}},   /* chance by level; how much of it */
+    {"VARY 2", FAM_SEQ, SC_GLOBAL, GR_NONE, {G_VRVEL, G_VRRAT, G_VRLOOK, G_VRSEED}},   /* velocity, ratchets, hold a look */
     {"ACID GEN", FAM_SEQ, SC_GLOBAL, GR_NONE, {G_AGDENS, G_AGACC, G_AGSLD, G_AGSEED}},     /* TB-3PO's lines into the */
     {"ACID GEN 2", FAM_SEQ, SC_GLOBAL, GR_NONE, {G_AGSCALE, G_AGOCT, G_AGROOT, G_AGMUT}},  /* track (acid_gen.c) */
     {"GEN", FAM_SEQ, SC_GLOBAL, GR_ROLL, {G_GNON, G_GNCHG, G_GNDENS, G_GNRANGE}},   /* a loop that changes as */
