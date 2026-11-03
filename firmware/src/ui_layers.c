@@ -302,6 +302,51 @@ static void steps_held_fill(void)
     ui_message(MSG[v % 4u]);
 }
 
+/* SELECT with step keys held (VARY): their chance, 100 % .. 0 % (a synth step's own, SF_CH_*: in the step, so in the project and the
+ * song). The drum track has no room for one per hit: its hits' chance is SEQ > VARY, by level */
+static uint32_t vary_pct(const step_t *st)           /* the step's chance in %, as vr_step_c127 plays it */
+{
+    uint32_t code = (uint32_t)(st->flags & SF_CH_MASK) >> SF_CH_SH;
+    return (31u - code) * 100u / 31u;
+}
+static void steps_held_chance(int32_t s)
+{
+    track_t *t = TSEL;
+    uint32_t w, shown = 100u, first = 1;
+    int32_t d = accel(EN_SELECT, s, 31);
+    char b[16];
+    if (is_drum(t)) {
+        ui_message("DRUMS: CHANCE IN SEQ > VARY");
+        return;
+    }
+    layer_undo_mark(t);
+    step_pend_off &= (uint16_t)~ui.step_held;
+    fm1_irq_off();
+    for (w = 0; w < 16u; w++) {
+        uint32_t idx = ui.step_page * 16u + w;
+        step_t *st;
+        if (!((ui.step_held >> w) & 1u) || idx >= trk_len(t))
+            continue;
+        st = &t->step[idx];
+        if (!step_on(st))
+            continue;
+        {
+            int32_t code = (int32_t)((st->flags & SF_CH_MASK) >> SF_CH_SH);
+            code = clamp(code - d, 0, 31);                /* (clockwise: more chance) */
+            st->flags = (uint8_t)((st->flags & ~SF_CH_MASK) | (uint32_t)code << SF_CH_SH);
+        }
+        if (first)
+            shown = vary_pct(st);
+        first = 0;
+    }
+    fm1_irq_on();
+    sync_reload = 1;
+    str_cpy(b, "CHANCE ", sizeof b);
+    fmt_int(b + 7, (int32_t)shown);
+    str_cpy(b + str_len(b), "%", 2);
+    ui_message(b);
+}
+
 /* ------------------------------------------------------------- GLO --- */
 static void tap_tempo(void)
 {
@@ -481,6 +526,10 @@ static void layer_knobs(uint32_t layer)
         if ((s = panel_enc(EN_ALGO)) != 0) {
             ui.layer_used = 1;
             lock_par_step(s);
+        }
+        if ((s = panel_enc(EN_SELECT)) != 0) {            /* SELECT: the held steps' chance (VARY) instead of the tempo */
+            ui.layer_used = 1;
+            steps_held_chance(s);
         }
     }
     for (k = 0; k < 4u; k++) {
@@ -825,6 +874,8 @@ static void layer_screen_draw(void)
             tl[i].marks = (uint8_t)(on ? rt : 0u);
             tl[i].tag = (uint8_t)step_locked(t, idx);   /* a nudge or a lock on it */
             tl[i].cond = (uint8_t)step_fill(t, idx);   /* its condition (fill, no fill, chance) */
+            if (!tl[i].cond && !is_drum(t) && (t->step[idx].flags & SF_CH_MASK))
+                tl[i].cond = FC_CHANCE;                /* (VARY: a step with a chance of its own: the same ?) */
             if (song.playing && idx == t->seq_idx)
                 tl[i].top = C_WHITE;
             if ((ui.step_held >> i) & 1u)

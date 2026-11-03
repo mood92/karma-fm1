@@ -263,7 +263,7 @@ static void graph_roll(const track_t *t, uint16_t c)
             fmt_int(nm, (int32_t)si + 1);             /* its number, to find the way */
             cv_text(x + (w - text_w(&FONT_S, nm)) / 2, y + 12, &FONT_S, nm, play ? C_WHITE : TE_G3);
         }
-        if (step_fill(t, si) == FC_CHANCE) {         /* a CHANCE step (SEQ > PLAY): a ? in its corner */
+        if (step_fill(t, si) == FC_CHANCE || (st->flags & SF_CH_MASK)) {   /* a CHANCE step (SEQ > PLAY, or VARY's own): a ? in its corner */
             uint16_t q = step_on(st) && !play ? C_BLACK : play ? C_BLACK : TE_G4;
             cv_rect(x + 2, y + 3, 5, 2, q);
             cv_rect(x + 5, y + 5, 2, 2, q);

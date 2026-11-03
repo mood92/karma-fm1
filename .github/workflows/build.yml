@@ -6,7 +6,7 @@ name: build
 on:
   workflow_dispatch:
   push:
-    branches: [main]
+    branches: [main, seq-song]
     paths: ['firmware/**', 'tools/**', 'assets/**', 'build.sh', '.github/workflows/build.yml']
 
 jobs:
@@ -44,10 +44,10 @@ jobs:
       - name: Name the package
         run: |
           mkdir -p out
-          cp build/karma.fwsc out/MainMenu-LivePlayer.fwsc
+          cp build/karma.fwsc out/KARMA-SeqSong.fwsc
 
       - uses: actions/upload-artifact@v4
         with:
-          name: MainMenu-LivePlayer
-          path: out/MainMenu-LivePlayer.fwsc
+          name: KARMA-SeqSong
+          path: out/KARMA-SeqSong.fwsc
           if-no-files-found: error
