@@ -816,12 +816,41 @@ static uint32_t fill_last_bar = 0xFFFFFFFFu; /* clk_beat / 4 of the last bar see
 enum { PD_FWD, PD_REV, PD_PEND, PD_RAND, PD_WALK, PD_COUNT };
 static uint8_t pl_dir[NTRK], pl_jump[NTRK], pl_pos[NTRK];
 static uint8_t pl_chance[NTRK] = {64, 64, 64, 64}, pl_stride[NTRK] = {1, 1, 1, 1};
+/* SEQ > PLAY 2, GHOST: how often a ghost-level note or hit plays (0..127 = 0..100 %; 127, the default, always: the
+ * dice are not even rolled, so nothing changes). Normal, soft and hard notes always play */
+static uint8_t pl_ghost[NTRK] = {127, 127, 127, 127};
 static uint32_t step_plays(const track_t *t, uint32_t idx)   /* its condition holds now */
 {
     uint32_t c = step_fill(t, idx);
     if (c == FC_CHANCE)
         return rng() % 127u < pl_chance[(uint32_t)(t - trk) % NTRK];
     return c == FC_FILL ? fill_now : c == FC_NOFILL ? !fill_now : 1u;
+}
+/* the ghost notes of step idx that GHOST says stay silent this time, a bit per note (synth) or lane (drums).
+ * A synth step rolls once: its ghost notes, a chord's too, play together or not at all. On the drum track each
+ * ghost hit rolls for itself (a ghost snare and a ghost hat on one step vary apart) */
+static uint32_t ghost_skip(const track_t *t, uint32_t idx)
+{
+    uint32_t g = pl_ghost[(uint32_t)(t - trk) % NTRK], m = 0, i;
+    if (g >= 127u)
+        return 0u;
+    if (is_drum(t)) {
+        const dstep_t *d = &t->dstep[idx % NSTEP];
+        uint32_t on = dstep_mask(d);
+        for (i = 0; i < DRUM_LANES; i++)
+            if (((on >> i) & 1u) && dstep_lvl(d, i) == LV_GHOST && rng() % 127u >= g)
+                m |= 1u << i;
+        return m;
+    }
+    {
+        const step_t *s = &t->step[idx % NSTEP];
+        if (s->time != ST_NOTE)
+            return 0u;
+        for (i = 0; i < s->n && i < 4u; i++)
+            if (((s->lvl >> (2u * i)) & 3u) == LV_GHOST)
+                m |= 1u << i;
+        return m && rng() % 127u >= g ? m : 0u;
+    }
 }
 /* the step that plays at the grid's step nabs (DIR, STRIDE); while recording: in order */
 static uint32_t play_idx(const track_t *t, uint32_t nabs, uint32_t len)
@@ -2017,7 +2046,7 @@ static void seq_ratchets(track_t *t, uint32_t into, uint32_t slen)
         return;                                     /* (its condition failed: no hit at all) */
     if (is_drum(t)) {
         const dstep_t *s = &t->dstep[t->seq_idx % NSTEP];
-        uint32_t m = dstep_mask(s) & ~roll_lanes(t) & ~(uint32_t)drum_mute;
+        uint32_t m = dstep_mask(s) & ~roll_lanes(t) & ~(uint32_t)drum_mute & ~t->gskip;
         for (i = 0; m; i++, m >>= 1) {
             uint32_t hits = 1u + dstep_rat(s, i), h, done;
             if (!(m & 1u) || hits == 1u)
@@ -2038,7 +2067,7 @@ static void seq_ratchets(track_t *t, uint32_t into, uint32_t slen)
             return;
         for (i = 0; i < s->n; i++) {
             uint32_t hits = 1u + ((s->rat >> (2u * i)) & 3u), h;
-            if (hits == 1u || roll_has(t, s->note[i]))
+            if (hits == 1u || roll_has(t, s->note[i]) || ((t->gskip >> i) & 1u))
                 continue;
             h = into * hits / slen;
             if (h > t->rat_done[i] && h < hits) {
@@ -2122,6 +2151,7 @@ static void seq_tick(track_t *t, uint32_t adv)
         if (erasing(t))
             erase_step(t, idx);                      /* EDIT + key held: gone as it passes */
         t->seq_skip = (uint8_t)!step_plays(t, idx);
+        t->gskip = t->seq_skip ? 0u : ghost_skip(t, idx);   /* SEQ > PLAY 2 GHOST: ghost notes that sit this one out */
         if (t->seq_skip) {                           /* its fill condition fails: as a REST with no lock */
             lock_step(t, NSTEP);                     /* (no step has locks there: the bases are back) */
             t->rskip_lanes = 0;
@@ -2136,7 +2166,7 @@ static void seq_tick(track_t *t, uint32_t adv)
             uint32_t skip = t->rskip_abs == nabs ? t->rskip_lanes : 0u;
             lock_step(t, idx);                       /* its parameter locks, before the block renders */
             t->rskip_lanes = 0;
-            drum_step(t, &t->dstep[idx], skip);
+            drum_step(t, &t->dstep[idx], skip | t->gskip);
         } else {
             const step_t *s = &t->step[idx];
             uint32_t skip = 0, i, k;
@@ -2148,6 +2178,7 @@ static void seq_tick(track_t *t, uint32_t adv)
                         if (s->note[i] == t->rskip[k])
                             skip |= 1u << i;
             t->rskip_n = 0;
+            skip |= t->gskip;                        /* (GHOST: not triggered, nothing of them to release) */
             if (pl_jump[(uint32_t)(t - trk) % NTRK] && rng() % 127u < pl_jump[(uint32_t)(t - trk) % NTRK]) {
                 step_t up = *s;                      /* SEQ > PLAY JUMP: this time an octave up */
                 for (i = 0; i < up.n && i < 4u; i++)

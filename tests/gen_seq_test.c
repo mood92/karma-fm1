@@ -387,6 +387,46 @@ int main(void)
         ck(hits == 0u && step_plays(u, 4), "CHANCE 0: never; a normal step: always");
         step_fill_set(u, 3, FC_NORM); pl_chance[0] = 64;
     }
+    {   /* SEQ > PLAY 2 GHOST: only ghost-level notes / hits roll; a synth step rolls once (a chord is one group) */
+        track_t *u = &trk[0], *dr = &trk[TRK_DRUM];
+        step_t keep = u->step[5], *gs = &u->step[5];
+        dstep_t dkeep = dr->dstep[5], *ds = &dr->dstep[5];
+        uint32_t k, bad = 0, plays = 0, m, l0 = 0, l1 = 0;
+        memset(gs, 0, sizeof *gs);
+        gs->n = 3, gs->time = ST_NOTE, gs->note[0] = 60, gs->note[1] = 64, gs->note[2] = 67;
+        gs->lvl = (uint8_t)(LV_GHOST | LV_GHOST << 2 | LV_GHOST << 4);
+        pl_ghost[0] = 127;
+        ck(ghost_skip(u, 5) == 0u, "GHOST 100 %: nothing skipped (the dice are not even rolled)");
+        pl_ghost[0] = 0;
+        ck(ghost_skip(u, 5) == 7u, "GHOST 0: a ghost chord stays silent, every note of it");
+        pl_ghost[0] = 64;
+        for (k = 0; k < 4000u; k++) {
+            m = ghost_skip(u, 5);
+            bad += m != 0u && m != 7u;                  /* never one note of the chord alone */
+            plays += m == 0u;
+        }
+        ck(!bad && plays > 1700u && plays < 2300u, "GHOST 50 %: a ghost chord plays about half the time, as one group");
+        gs->lvl = (uint8_t)(LV_NORM | LV_NORM << 2 | LV_NORM << 4);
+        pl_ghost[0] = 0;
+        ck(ghost_skip(u, 5) == 0u, "GHOST 0: a chord at the normal level always plays");
+        gs->lvl = (uint8_t)(LV_GHOST | LV_NORM << 2 | LV_HARD << 4);
+        ck(ghost_skip(u, 5) == 1u, "GHOST 0: only the ghost note of a mixed chord is skipped");
+        memset(ds, 0, sizeof *ds);
+        dstep_set(ds, 1, LV_GHOST, 0);
+        dstep_set(ds, 2, LV_GHOST, 0);
+        dstep_set(ds, 3, LV_NORM, 0);
+        pl_ghost[TRK_DRUM] = 0;
+        ck(ghost_skip(dr, 5) == 6u, "GHOST 0 (drums): the ghost hits are skipped, the normal one plays");
+        pl_ghost[TRK_DRUM] = 64;
+        for (k = 0; k < 4000u; k++) {
+            m = ghost_skip(dr, 5);
+            l0 += (m >> 1) & 1u, l1 += (m >> 2) & 1u;
+            bad += (m & 1u) || (m & 8u);               /* never a lane that is not ghost */
+        }
+        ck(!bad && l0 > 1700u && l0 < 2300u && l1 > 1700u && l1 < 2300u, "GHOST 50 % (drums): each ghost hit rolls on its own");
+        pl_ghost[0] = pl_ghost[TRK_DRUM] = 127;
+        *gs = keep, *ds = dkeep;
+    }
     printf(fails ? "gen: FAILED\n" : "gen: all ok\n");
     return fails ? 1 : 0;
 }

@@ -116,6 +116,8 @@ enum {                          /* global parameters */
     G_KNOBS,                                /* GLO > MIDI 3: CC 70-77 the EDIT knobs, or the GM map (a setting of the FM-1) */
     G_GKROOT, G_GKMODE, G_GKPROG, G_GKBARS, /* SEQ > HARMONY (gen_seq.c): KEY MODE as track 1's ROOT SCL (ui_studio.c gen_ui_sync), */
                                             /* PROG BARS the FM-1's, not in a project */
+    G_PLGHO,                                /* SEQ > PLAY 2: GHOST, how often a ghost-level note or hit plays (seq.c pl_ghost; the selected
+                                             * track's, ui_studio.c play_ui_sync). 100 % = every one plays, as before */
     G_COUNT
 };
 
@@ -276,6 +278,7 @@ typedef struct track {
     uint8_t seq_n;
     uint8_t seq_hold;            /* last step slides: keep the notes until the next step */
     uint8_t seq_skip;            /* the step playing failed its fill condition: nothing of it sounds */
+    uint32_t gskip;              /* SEQ > PLAY 2 GHOST: the notes (a bit each) / drum lanes of the step playing whose roll failed */
     uint8_t slide_glide;         /* next legato note glides (slide) */
     uint32_t seq_off;            /* units to the note-off of the step's notes */
     uint8_t seq_active;          /* any step programmed */

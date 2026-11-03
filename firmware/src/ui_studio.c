@@ -257,6 +257,7 @@ static void play_ui_sync(void)
     if (s != sel_was) {
         sel_was = (uint8_t)s;
         g[G_PLDIR] = pl_dir[s], g[G_PLCHN] = pl_chance[s], g[G_PLJMP] = pl_jump[s], g[G_PLSTR] = pl_stride[s];
+        g[G_PLGHO] = pl_ghost[s];
     }
     if (g[G_PLDIR] != pl_dir[s] && pl_dir[s] == PD_WALK)
         pl_pos[s] = (uint8_t)(trk[s].seq_idx % NSTEP);  /* (WALK starts where the track is) */
@@ -264,6 +265,7 @@ static void play_ui_sync(void)
     pl_chance[s] = (uint8_t)clamp(g[G_PLCHN], 0, 127);
     pl_jump[s] = (uint8_t)clamp(g[G_PLJMP], 0, 127);
     pl_stride[s] = (uint8_t)clamp(g[G_PLSTR], 1, 7);
+    pl_ghost[s] = (uint8_t)clamp(g[G_PLGHO], 0, 127);
 }
 static void gen_ui_sync(void)
 {
