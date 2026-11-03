@@ -917,8 +917,11 @@ static int project_used(uint32_t slot) { return proj_ok(&proj_slot[slot & 3u]); 
  * the default (nothing learned, channels 1 2 3 10, OTHER SEL, BEND 2): else the object is exactly 2.5's. 2.6 test
  * builds wrote 32 (the map) or 36 bytes (and the channels) */
 #define MIDI_PART (2u * ML_N + 8u)
-_Static_assert(sizeof(persist_t) + sizeof(dsu_bank_t) + MIDI_PART <= ST_PAYLOAD_MAX, "the settings object fits its sector");
-static uint8_t midi_saved[MIDI_PART];
+#define VARY_PART 26u                               /* SEQ-SONG: SEQ > VARY, after the MIDI part: per track GHOST SOFT HARD AMOUNT VEL RND
+                                                     * RATCHET (4 x 6), then LOOK, SEED; only written when not the defaults */
+#define MIDI_VARY (MIDI_PART + VARY_PART)
+_Static_assert(sizeof(persist_t) + sizeof(dsu_bank_t) + MIDI_VARY <= ST_PAYLOAD_MAX, "the settings object fits its sector");
+static uint8_t midi_saved[MIDI_VARY];
 static uint8_t drch_seed;                           /* a settings object as 2.5 wrote it: the drum channel was the
                                                      * project's then (autosave_resume takes it from a 2.5 autosave) */               /* the part as flash has it (settings_save: written when it differs) */
 static void midi_part_fill(uint8_t *b)
@@ -930,6 +933,38 @@ static void midi_part_fill(uint8_t *b)
     b[2u * ML_N + 3u] = (uint8_t)(midi_set[3] | midi_set[4] << 7);
     b[2u * ML_N + 4u] = midi_set[5];
     b[2u * ML_N + 5u] = b[2u * ML_N + 6u] = b[2u * ML_N + 7u] = 0;
+}
+static void vary_part_fill(uint8_t *b)
+{
+    uint32_t t;
+    for (t = 0; t < NTRK; t++) {
+        b[6u * t] = vr_lv[t][0], b[6u * t + 1u] = vr_lv[t][1], b[6u * t + 2u] = vr_lv[t][2];
+        b[6u * t + 3u] = vr_amt[t], b[6u * t + 4u] = vr_vel[t], b[6u * t + 5u] = vr_rat[t];
+    }
+    b[24] = vr_look, b[25] = vr_seed;
+}
+static int vary_part_default(const uint8_t *b)
+{
+    uint32_t t, k;
+    for (t = 0; t < NTRK; t++) {
+        for (k = 0; k < 3u; k++)
+            if (b[6u * t + k] != 127u) return 0;
+        if (b[6u * t + 3u] != 127u || b[6u * t + 4u] != 0 || b[6u * t + 5u] != 127u) return 0;
+    }
+    return !b[24] && !b[25];
+}
+static void vary_part_read(const uint8_t *b)       /* every value clamped, as the knob would */
+{
+    uint32_t t, k;
+    for (t = 0; t < NTRK; t++) {
+        for (k = 0; k < 3u; k++)
+            vr_lv[t][k] = (uint8_t)(b[6u * t + k] > 127u ? 127u : b[6u * t + k]);
+        vr_amt[t] = (uint8_t)(b[6u * t + 3u] > 127u ? 127u : b[6u * t + 3u]);
+        vr_vel[t] = (uint8_t)(b[6u * t + 4u] > 40u ? 40u : b[6u * t + 4u]);
+        vr_rat[t] = (uint8_t)(b[6u * t + 5u] > 127u ? 127u : b[6u * t + 5u]);
+    }
+    vr_look = (uint8_t)(b[24] ? 1u : 0u);
+    vr_seed = (uint8_t)(b[25] > 99u ? 99u : b[25]);
 }
 static int midi_part_default(const uint8_t *b)
 {
@@ -967,13 +1002,14 @@ static void midi_part_read(const uint8_t *b, uint32_t n)
 }
 static int settings_write(const persist_t *p)
 {
-    uint8_t mp[MIDI_PART];
+    uint8_t mp[MIDI_VARY];
     if (!dsu_valid(&dsu))
         dsu_defaults();
     midi_part_fill(mp);
+    vary_part_fill(mp + MIDI_PART);
     /* the third part only when it is not the default: without, the object is exactly 2.5's (2.5 reads it whole, SYN
      * kits included; with it, it takes the object for one without them) */
-    if (st_save3(OBJ_SETTINGS, p, sizeof *p, &dsu, sizeof dsu, mp, midi_part_default(mp) ? 0u : sizeof mp))
+    if (st_save3(OBJ_SETTINGS, p, sizeof *p, &dsu, sizeof dsu, mp, midi_part_default(mp) ? (vary_part_default(mp + MIDI_PART) ? 0u : sizeof mp) : sizeof mp))
         return -1;
     dsu_dirty = 0;
     memcpy(midi_saved, mp, sizeof midi_saved);
@@ -987,16 +1023,19 @@ static void dsu_boot(void)                          /* the SYN kits (and the MID
     for (k = 0; k < ML_N; k++)
         ml_tab[k] = 0;
     if (st_current(OBJ_SETTINGS, &h) >= 0 &&
-        (h.len == len || h.len == len + 2u * ML_N || h.len == len + 2u * ML_N + 4u || h.len == len + MIDI_PART) &&
+        (h.len == len || h.len == len + 2u * ML_N || h.len == len + 2u * ML_N + 4u || h.len == len + MIDI_PART || h.len == len + MIDI_VARY) &&
         dsu_valid((const dsu_bank_t *)(st_buf + sizeof(persist_t)))) {
         memcpy(&dsu, st_buf + sizeof(persist_t), sizeof dsu);
         for (k = 0; k < DSU_N; k++)
             dsu_fix_kit(&dsu.k[k]);
         if (h.len > len)
             midi_part_read(st_buf + len, h.len - len);
+        if (h.len == len + MIDI_VARY)
+            vary_part_read(st_buf + len + MIDI_PART);
         drch_seed = h.len == len;
     }
     midi_part_fill(midi_saved);
+    vary_part_fill(midi_saved + MIDI_PART);
     dsu_dirty = 0;
 }
 #endif
@@ -1023,8 +1062,9 @@ static void settings_save(void)
         return;
     persist_fill(&p);
     {
-        uint8_t mp[MIDI_PART];
+        uint8_t mp[MIDI_VARY];
         midi_part_fill(mp);
+        vary_part_fill(mp + MIDI_PART);
         if (!memcmp(&p, &persist_saved, sizeof p) && !memcmp(mp, midi_saved, sizeof mp) && !dsu_dirty)
             return;                                /* unchanged: no erase cycle */
     }
@@ -1217,6 +1257,19 @@ static void sections_flush(void)                        /* main loop */
                 midi_set[k] = (uint8_t)song.g[gid[k]];
                 settings_later = 1;
             }
+    }
+    {   /* SEQ-SONG: SEQ > VARY kept with the settings (once quiet) */
+        static uint8_t vary_seen[VARY_PART];
+        static uint8_t vary_init;
+        uint8_t vp[VARY_PART];
+        vary_part_fill(vp);
+        if (!vary_init) {
+            vary_init = 1;
+            memcpy(vary_seen, vp, VARY_PART);
+        } else if (memcmp(vp, vary_seen, VARY_PART)) {
+            memcpy(vary_seen, vp, VARY_PART);
+            settings_later = 1;
+        }
     }
     if (dsu_dirty)                                      /* a HEX kit edited (ui_studio.c hex_ui_sync): kept when quiet */
         settings_later = 1;
