@@ -382,10 +382,11 @@ static inline int32_t send_thr(int32_t s, int32_t g) { return g ? s + (((127 * 2
 #define TDRUM (&trk[TRK_DRUM])
 static int is_drum(const track_t *t) { return t == TDRUM; }
 /* silent: MUTE, or another track is soloed */
+static volatile uint8_t arr_mute_now;      /* the song entry playing: its tracks muted (not saved in a section) */
 static int trk_silent(const track_t *t)
 {
     uint32_t i = (uint32_t)(t - trk);
-    return t->p[P_MUTE] || (song.solo && !((song.solo >> i) & 1u));
+    return t->p[P_MUTE] || ((arr_mute_now >> i) & 1u) || (song.solo && !((song.solo >> i) & 1u));
 }
 #define RING_PUBLISH() __asm__ volatile("" ::: "memory")   /* slot store before the index update */
 static volatile uint32_t fm1_ms;  /* milliseconds since boot (TIMER4-based, TIMER5 ISR in main.c) */

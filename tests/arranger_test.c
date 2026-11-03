@@ -42,7 +42,11 @@ int main(void)
     assert(arr_next(&r, &c, 44118) == 0 && r.running);
     c.entry[0].bars = 0; assert(arr_valid(&c, 15));   /* KARMA 3.0: 0 = LOOP (the section's own length) */
     c.entry[0].bars = 65; assert(!arr_valid(&c, 15));
-    c.entry[0].bars = 1; c.entry[0].scene = 4; assert(!arr_valid(&c, 15));
+    c.entry[0].bars = 1; c.entry[0].scene = 64; assert(!arr_valid(&c, 15));
+    c.entry[0].scene = (uint8_t)(2u | (5u << 2)); assert(arr_valid(&c, 15));   /* SEQ-SONG: section C, tracks 0 and 2 muted */
+    assert(ARR_SCN(c.entry[0].scene) == 2u && ARR_MUTE(c.entry[0].scene) == 5u);
+    assert(arr_begin(&r, &c, 15) == 2);               /* the scene reported is the section only */
+    assert(!arr_valid(&c, 3));                         /* section C not ready: still invalid with mutes */
     c.entry[0].scene = 0; c.count = 17; assert(!arr_valid(&c, 15));
     {   /* 2.6: a section erased (SAVE > PROJECT > ERASE): the song's steps that played it out, the rest in order */
         arr_config_t d;

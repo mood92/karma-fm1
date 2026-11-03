@@ -73,6 +73,29 @@ int main(int argc,char **argv)
     arrangement.entry[1]=(arr_entry_t){1,8};
     arrangement.entry[2]=(arr_entry_t){2,8};
     arrangement.entry[3]=(arr_entry_t){3,4};
+    {   /* SEQ-SONG: per-entry mutes, duplicate, delete */
+        song_cursor=1; song_mtrk=0;
+        enc[EN_ALGO]=2;song_screen_input(0,0);assert(song_mtrk==2);
+        enc[EN_SELECT]=1;song_screen_input(0,0);
+        assert(ARR_MUTE(arrangement.entry[1].scene)==4u && ARR_SCN(arrangement.entry[1].scene)==1u);
+        enc[EN_K2]=1;song_screen_input(0,0);          /* changing the section keeps the mutes */
+        assert(ARR_SCN(arrangement.entry[1].scene)==2u && ARR_MUTE(arrangement.entry[1].scene)==4u);
+        enc[EN_SELECT]=1;song_screen_input(0,0);assert(ARR_MUTE(arrangement.entry[1].scene)==0u);   /* toggles back */
+        enc[EN_SELECT]=1;song_screen_input(0,0);       /* muted again, then duplicate */
+        enc[EN_PRESET]=1;song_screen_input(0,0);
+        assert(arrangement.count==5 && song_cursor==2 && arrangement.entry[2].scene==arrangement.entry[1].scene &&
+               arrangement.entry[2].bars==arrangement.entry[1].bars && arrangement.entry[3].bars==8 &&
+               ARR_SCN(arrangement.entry[4].scene)==3u);
+        enc[EN_PRESET]=-1;song_screen_input(0,0);
+        assert(arrangement.count==4 && ARR_SCN(arrangement.entry[2].scene)==2u && ARR_SCN(arrangement.entry[3].scene)==3u);
+        song.playing=1;enc[EN_SELECT]=1;song_screen_input(0,0);   /* stopped-only */
+        assert(ARR_MUTE(arrangement.entry[1].scene)==4u);
+        song.playing=0;
+        arr_mute_now=4;assert(trk_silent(&trk[2]) && !trk_silent(&trk[1]));arr_mute_now=0;assert(!trk_silent(&trk[2]));
+        arr_defaults(&arrangement);song_cursor=0;
+        arrangement.entry[0]=(arr_entry_t){0,4};arrangement.entry[1]=(arr_entry_t){1,8};
+        arrangement.entry[2]=(arr_entry_t){2,8};arrangement.entry[3]=(arr_entry_t){3,4};
+    }
     palette_set(2);song_screen_draw();
     if(argc>1) {
         FILE *f=fopen(argv[1],"wb");assert(f);

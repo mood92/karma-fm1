@@ -1,6 +1,7 @@
 /* SPDX-License-Identifier: GPL-3.0-only */
 /* Compact 240 x 240 song-order editor. All changes and flash saves require
  * stopped transport. The four existing project slots are sections A..D. */
+static uint8_t song_mtrk;                          /* the track the SELECT knob mutes for the entry */
 static uint8_t song_cursor, song_store_armed, song_load_armed;
 static uint32_t song_store_deadline;
 static int on_song_page(void) { return !ui.home && cur_page()->scope == SC_SONG; }
@@ -8,7 +9,7 @@ static void song_sane(void)                         /* a bad chain (blank / dama
 {
     uint32_t i, ok = arrangement.count >= 1u && arrangement.count <= ARR_STEPS;
     for (i = 0; ok && i < arrangement.count; i++)
-        ok = arrangement.entry[i].scene < ARR_SCENES && arrangement.entry[i].bars <= 64u;   /* (0: LOOP) */
+        ok = !(arrangement.entry[i].scene >> 6) && arrangement.entry[i].bars <= 64u;   /* (0: LOOP) */
     if (!ok)
         arr_defaults(&arrangement);
     if (song_cursor >= arrangement.count)
@@ -29,6 +30,7 @@ static void song_screen_draw(void)
     for (i = 0; i < arrangement.count; i++)
         sig = sig * 31u + arrangement.entry[i].scene + 7u * arrangement.entry[i].bars;
     for (i = 0; i < ARR_SCENES; i++) sig = sig * 3u + (uint32_t)project_used(i);
+    sig += 977u * song_mtrk;
     if (!ui.force && !ui.msg_t && sig == previous) return;
     previous = ui.msg_t ? ~sig : sig;               /* redraw after a message expires */
     /* Draw one small band at a time: never exceed the 124-row canvas. */
@@ -47,13 +49,13 @@ static void song_screen_draw(void)
         cv_begin(240, 26, C_BLACK);
         if (pos < arrangement.count) {
             const arr_entry_t *e = &arrangement.entry[pos];
-            int selected = pos == song_cursor, used = project_used(e->scene);
-            uint16_t sc = SC[e->scene & 3u];
+            int selected = pos == song_cursor, used = project_used(ARR_SCN(e->scene));
+            uint16_t sc = SC[ARR_SCN(e->scene)];
             int32_t w;
             fmt_int(b, (int32_t)pos + 1);
             cv_text(4, 5, &FONT_S, b, selected ? C_WHITE : RGB(118, 118, 126));
             cv_rect(30, 3, 22, 20, used ? sc : RGB(26, 26, 30));   /* the section tile */
-            b[0] = (char)('A' + e->scene); b[1] = 0;
+            b[0] = (char)('A' + ARR_SCN(e->scene)); b[1] = 0;
             cv_text(37, 5, &FONT_S, b, used ? C_BLACK : sc);
             {
                 uint32_t eb = arr_entry_bars(&arrangement, pos);   /* (LOOP: the section's own length) */
@@ -72,6 +74,15 @@ static void song_screen_draw(void)
             if (arrangement_clock.running && arrangement_clock.index == pos) {
                 cv_rect(60, 19, (int32_t)(arrangement_clock.bar + 1u) * w / (int32_t)arr_entry_bars(&arrangement, pos), 2, C_WHITE);
                 cv_rect(226, 9, 9, 9, SC[1]);
+            }
+            {                                           /* the tracks muted in this entry (red); the focus outlined */
+                uint32_t m;
+                for (m = 0; m < NTRK; m++) {
+                    int32_t mx = 190 + (int32_t)m * 9;
+                    int muted = (ARR_MUTE(e->scene) >> m) & 1u;
+                    cv_rect(mx, 20, 7, 3, muted ? RGB(255, 60, 60) : RGB(40, 40, 46));
+                    if (selected && m == song_mtrk) cv_rect(mx, 24, 7, 1, C_WHITE);
+                }
             }
             if (selected) cv_rect(0, 1, 240, 1, RGB(54, 54, 60)), cv_rect(0, 24, 240, 1, RGB(54, 54, 60));
         }
@@ -111,7 +122,7 @@ static void song_screen_input(uint32_t pressed, uint32_t home)
         } else if (b == B_SEQ) {
             open_family(FAM_SEQ);
         } else if (b == B_SAVE || b == B_REC || b == B_OCTDN || b == B_OCTUP) {
-            uint32_t scene = arrangement.entry[song_cursor].scene;
+            uint32_t scene = ARR_SCN(arrangement.entry[song_cursor].scene);
             if (song.playing || transport_req) { ui_message("STOP FIRST"); continue; }
             if (b == B_SAVE) {
                 arrangement_save();
@@ -151,7 +162,10 @@ static void song_screen_input(uint32_t pressed, uint32_t home)
             continue;
         }
         if (song.playing || transport_req) { ui_message("STOP FIRST"); continue; }
-        if (k == 1) arrangement.entry[song_cursor].scene = (uint8_t)clamp(arrangement.entry[song_cursor].scene + steps, 0, 3);
+        if (k == 1) {
+            uint8_t *sb = &arrangement.entry[song_cursor].scene;
+            *sb = (uint8_t)((*sb & ~3u) | (uint32_t)clamp((int32_t)ARR_SCN(*sb) + steps, 0, 3));   /* (the mutes stay) */
+        }
         if (k == 2) arrangement.entry[song_cursor].bars = (uint8_t)clamp(arrangement.entry[song_cursor].bars + steps, 0, 64);   /* 0: LOOP */
         if (k == 3) {
             arrangement.count = (uint8_t)clamp(arrangement.count + steps, 1, ARR_STEPS);
@@ -159,5 +173,28 @@ static void song_screen_input(uint32_t pressed, uint32_t home)
         }
     }
     /* Unused encoders have no hidden action on this screen. */
-    panel_enc(EN_SELECT); panel_enc(EN_ALGO); panel_enc(EN_PRESET);
+    steps = panel_enc(EN_ALGO);                      /* ALGO: which track's mute SELECT flips */
+    if (steps) song_mtrk = (uint8_t)clamp((int32_t)song_mtrk + steps, 0, (int32_t)NTRK - 1);
+    steps = panel_enc(EN_SELECT);                    /* SELECT: mute / unmute that track in this entry */
+    if (steps) {
+        if (song.playing || transport_req) ui_message("STOP FIRST");
+        else arrangement.entry[song_cursor].scene ^= (uint8_t)(1u << (2u + song_mtrk));
+    }
+    steps = panel_enc(EN_PRESET);                    /* PRESET: + duplicates the entry, - deletes it */
+    if (steps) {
+        uint32_t i;
+        if (song.playing || transport_req) ui_message("STOP FIRST");
+        else if (steps > 0 && arrangement.count < ARR_STEPS) {
+            for (i = arrangement.count; i > (uint32_t)song_cursor + 1u; i--)
+                arrangement.entry[i] = arrangement.entry[i - 1u];
+            arrangement.entry[song_cursor + 1u] = arrangement.entry[song_cursor];
+            arrangement.count++;
+            song_cursor++;
+        } else if (steps < 0 && arrangement.count > 1u) {
+            for (i = song_cursor; i + 1u < arrangement.count; i++)
+                arrangement.entry[i] = arrangement.entry[i + 1u];
+            arrangement.count--;
+            if (song_cursor >= arrangement.count) song_cursor = (uint8_t)(arrangement.count - 1u);
+        }
+    }
 }

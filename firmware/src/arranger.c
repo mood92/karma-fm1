@@ -14,6 +14,7 @@ static int arrangement_start(void)
     if (!arrangement_enabled) return 1;
     scene = arr_begin(&arrangement_clock, &arrangement, arrangement_ready());
     if (scene < 0) return 0;
+    arr_mute_now = (uint8_t)ARR_MUTE(arrangement.entry[0].scene);
     arrangement_apply((uint32_t)scene);
     song.rec = 0;                                    /* song playback does not overwrite patterns */
     return 1;

@@ -106,7 +106,7 @@ static uint8_t mo_any;                     /* something was sent on since the la
 static void seq_out_on(const track_t *t, uint32_t note, uint32_t vel)
 {
     uint32_t i = trk_index(t) % NTRK;
-    if (!song.g[G_MIDI] || note > 127u)
+    if (!song.g[G_MIDI] || note > 127u || ((arr_mute_now >> i) & 1u))   /* (a song entry's mutes silence the MIDI too) */
         return;
     seq_out_off(t, note);                      /* played again while on: off first */
     if (trk_midi_ch(i) != mo_ch[i]) {          /* (its channel changed: what is on ends where it started) */
@@ -1984,6 +1984,7 @@ static void seq_stop(void)
     live_req = -1;
     chain_n = 0;
 #endif
+    arr_mute_now = 0;                               /* the song entry's mutes end with the song */
     fill_held = 0;                                  /* STOP ends a fill, held or armed */
     fill_arm = 0;
     fill_bar_on = 0;
@@ -2520,7 +2521,8 @@ static void seq_jump(uint32_t pos16)
         }
         if (k != arrangement_clock.index) {
             arrangement_clock.index = (uint8_t)k;
-            arrangement_apply(arrangement.entry[k].scene);
+            arr_mute_now = (uint8_t)ARR_MUTE(arrangement.entry[k].scene);
+            arrangement_apply(ARR_SCN(arrangement.entry[k].scene));
         }
         arrangement_clock.bar = (uint8_t)bar;
         arrangement_clock.phase = in;
@@ -2722,12 +2724,13 @@ static void events_block(uint32_t n)
                  * at its loop's wrap (measured: 112 bars, only START and STOP), so a song as long as the loop stays
                  * with it; a SONG POSITION still moves it */
                 arrangement_clock.index = 0;
-                scene = arrangement.entry[0].scene;
+                scene = (int)ARR_SCN(arrangement.entry[0].scene);
             } else {
                 seq_stop();
             }
         }
         if (scene >= 0) {
+            arr_mute_now = (uint8_t)ARR_MUTE(arrangement.entry[arrangement_clock.index].scene);
             arrangement_apply((uint32_t)scene);
             seq_reset_tracks(arrangement_clock.phase);   /* (the remainder: exactly on the bar) */
         }

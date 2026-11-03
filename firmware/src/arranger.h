@@ -10,6 +10,9 @@
 #define ARR_NONE (-1)
 #define ARR_DONE (-2)
 #define ARR_INVALID (-3)
+/* the scene byte: bits 0..1 the section A..D, bits 2..5 the tracks muted for this entry only (SEQ-SONG) */
+#define ARR_SCN(b) ((uint32_t)(b) & 3u)
+#define ARR_MUTE(b) (((uint32_t)(b) >> 2) & 15u)
 typedef struct { uint8_t scene, bars; } arr_entry_t;   /* bars 0 = LOOP: the section's own length, once (KARMA 3.0) */
 typedef struct {
     uint8_t count, loop, reserved[2];
@@ -25,7 +28,7 @@ static uint32_t arr_entry_bars(const arr_config_t *c, uint32_t i)
 {
     uint32_t b = c->entry[i].bars;
     if (!b)
-        b = arr_scene_bars(c->entry[i].scene);
+        b = arr_scene_bars(ARR_SCN(c->entry[i].scene));
     return b < 1u ? 1u : b > 64u ? 64u : b;
 }
 
@@ -44,8 +47,8 @@ static int arr_valid(const arr_config_t *c, uint32_t ready)
     if (!c->count || c->count > ARR_STEPS || c->loop > 1u) return 0;
     for (i = 0; i < c->count; i++) {
         const arr_entry_t *e = &c->entry[i];
-        if (e->scene >= ARR_SCENES || e->bars > 64u ||
-            !(ready & (1u << e->scene))) return 0;
+        if ((e->scene >> 6) || e->bars > 64u ||
+            !(ready & (1u << ARR_SCN(e->scene)))) return 0;
     }
     return 1;
 }
@@ -55,7 +58,7 @@ static int arr_begin(arr_clock_t *r, const arr_config_t *c, uint32_t ready)
     r->error = (uint8_t)!arr_valid(c, ready);
     if (r->error) return ARR_INVALID;
     r->running = 1;
-    return c->entry[0].scene;
+    return (int)ARR_SCN(c->entry[0].scene);
 }
 static int arr_next(arr_clock_t *r, const arr_config_t *c, uint32_t sample_rate)
 {
@@ -70,7 +73,7 @@ static int arr_next(arr_clock_t *r, const arr_config_t *c, uint32_t sample_rate)
             if (!c->loop) { r->running = 0; return ARR_DONE; }
             r->index = 0;
         }
-        result = c->entry[r->index].scene;
+        result = (int)ARR_SCN(c->entry[r->index].scene);
     }
     return result;
 }
@@ -80,7 +83,7 @@ static int arr_drop_scene(arr_config_t *c, uint32_t scene)
 {
     uint32_t i, n = 0, count = c->count > ARR_STEPS ? ARR_STEPS : c->count;
     for (i = 0; i < count; i++)
-        if (c->entry[i].scene != scene)
+        if (ARR_SCN(c->entry[i].scene) != scene)
             c->entry[n++] = c->entry[i];
     if (n == count)
         return 0;
