@@ -1336,6 +1336,36 @@ int main(int argc, char **argv)
             check(gen_on == 0u, "SEQ > GEN: OFF again");
             ui.page = (uint8_t)pg; ui.force = 1; frame();
         }
+    {   /* SEQ > PLAY 2 > DUPL: the loop copied after its end, 16 -> 32 -> 64 steps (notes, nudges, conditions, locks) */
+        uint32_t i, ok, tr, pg2 = 0;
+        for (i = 0; i < NPAGES; i++) if (!strcmp(PAGES[i].title, "PLAY 2")) pg2 = i;
+        for (tr = 0; tr < 4u; tr += 3u) {
+            track_t *t = &trk[tr];
+            go_home(); song.playing = 0; ly_lock = LY_PLAY; track_select(tr); frames(2);
+            t->p[P_SLEN] = 16;
+            for (i = 0; i < 16u; i++) { memset(&t->step[i], 0, sizeof t->step[i]); t->micro[i] = 0; step_fill_set(t, i, FC_NORM); }
+            for (i = 0; i < NLOCK; i++) t->lock[i].step = LOCK_FREE;
+            if (tr == 0u) { t->step[3].n = 1; t->step[3].note[0] = 60; t->step[9].n = 2; t->step[9].note[0] = 64; t->step[9].note[1] = 67; t->step[9].lvl = 5; }
+            else { t->dstep[3].on[0] = 1; t->dstep[9].on[0] = 6; t->dstep[9].lvl[0] = 0x14; }
+            t->micro[3] = -7; step_fill_set(t, 9, FC_CHANCE);
+            t->lock[0].step = 9; t->lock[0].param = P_LEVEL; t->lock[0].val = 77;
+            ui.page = (uint8_t)pg2; ui.home = 0; page_entered(); ui.force = 1; frames(2);
+            encs[panel.enc[EN_K2]] = 1; frames(3);
+            ok = t->p[P_SLEN] == 32 && !memcmp(&t->step[19], &t->step[3], sizeof t->step[3]) && !memcmp(&t->step[25], &t->step[9], sizeof t->step[9]) &&
+                 t->micro[19] == -7 && step_fill(t, 25) == FC_CHANCE && step_fill(t, 9) == FC_CHANCE && step_fill(t, 16) == FC_NORM;
+            ok &= t->lock[1].step == 25 && t->lock[1].val == 77 && t->lock[0].step == 9;
+            check(ok, tr ? "SEQ > PLAY 2 > DUPL, the drum track: 16 -> 32 steps, hits, nudge, condition, lock copied" : "SEQ > PLAY 2 > DUPL: 16 -> 32 steps, notes, nudge, condition, lock copied");
+            encs[panel.enc[EN_K2]] = 1; frames(3);
+            check(t->p[P_SLEN] == 64 && !memcmp(&t->step[57], &t->step[9], sizeof t->step[9]) && !memcmp(&t->step[35], &t->step[3], sizeof t->step[3]), "DUPL again: 64 steps");
+            encs[panel.enc[EN_K2]] = 1; frames(3);
+            check(t->p[P_SLEN] == 64, "DUPL at 64 steps: nothing");
+            t->p[P_SLEN] = 40;
+            for (i = 40; i < 64u; i++) { memset(&t->step[i], 0, sizeof t->step[i]); }
+            t->step[0].n = 1; t->step[0].note[0] = 50; t->dstep[0].on[0] = 1;
+            encs[panel.enc[EN_K2]] = 1; frames(3);
+            check(t->p[P_SLEN] == 64 && !memcmp(&t->step[40], &t->step[0], sizeof t->step[0]), "DUPL from 40 steps: the 24 that fit are copied, 64");
+        }
+    }
     {   /* DRUMS: SEQ -> GRID -> KIT -> DRUM GEN -> GRID; DRUM GEN MAP on, playing */
         go_home(); song.playing = 0; ly_lock = LY_PLAY;
         track_select(TRK_DRUM); frames(2);

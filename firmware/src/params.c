@@ -278,6 +278,7 @@ static const param_desc_t GP[G_COUNT] = {
     [G_PLCHN] = PD("CHANCE", F_PCT, 0, 127, 64),
     [G_PLJMP] = PD("JUMP", F_PCT, 0, 127, 0),
     [G_PLSTR] = PD("STRIDE", F_INT, 1, 7, 1),
+    [G_PDUP] = PE("DUPL", N_GO, 0),                   /* SEQ > PLAY 2: the loop copied after its end (x2, up to 64 steps) */
     [G_PLGHO] = PD("GHOST", F_PCT, 0, 127, 127),      /* SEQ > PLAY 2: ghost notes / hits only; 127 = 100 % = always */
     [G_KNOBS] = PE("KNOBS", N_KNOBS, 4),            /* a controller's 8 knobs (CC 1-8 or 70-77: the Akai MPK minis):
                                                      * PANEL the FM-1's eight rotaries (PRESETS SELECT ALGORITHM MASTER,
@@ -522,7 +523,7 @@ static const page_t PAGES[] = {
     {"STEP", FAM_SEQ, SC_STEP, GR_ROLL, {0, 1, 2, 3}},
     {"PATTERN", FAM_SEQ, SC_TRACK, GR_STEPS, {P_SLEN, P_SDIV, P_SSWING, P_SGATE}},
     {"PLAY", FAM_SEQ, SC_GLOBAL, GR_NONE, {G_PLDIR, G_PLCHN, G_PLJMP, G_PLSTR}},   /* the order steps play in, chance */
-    {"PLAY 2", FAM_SEQ, SC_GLOBAL, GR_NONE, {G_PLGHO, 0xFF, 0xFF, 0xFF}},           /* GHOST: how often ghost notes play */
+    {"PLAY 2", FAM_SEQ, SC_GLOBAL, GR_NONE, {G_PLGHO, G_PDUP, 0xFF, 0xFF}},          /* GHOST: how often ghost notes play; DUPL: the loop twice */
     {"ACID GEN", FAM_SEQ, SC_GLOBAL, GR_NONE, {G_AGDENS, G_AGACC, G_AGSLD, G_AGSEED}},     /* TB-3PO's lines into the */
     {"ACID GEN 2", FAM_SEQ, SC_GLOBAL, GR_NONE, {G_AGSCALE, G_AGOCT, G_AGROOT, G_AGMUT}},  /* track (acid_gen.c) */
     {"GEN", FAM_SEQ, SC_GLOBAL, GR_ROLL, {G_GNON, G_GNCHG, G_GNDENS, G_GNRANGE}},   /* a loop that changes as */

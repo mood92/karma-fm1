@@ -487,6 +487,28 @@ static void edit_param(uint32_t slot, int32_t steps)
         *vp = 0;
         project_save((uint32_t)song.g[G_SLOT] - 1u);
         break;
+    case G_PDUP: {                                        /* the loop copied after its end: 16 -> 32 -> 64 steps */
+        char b[24];
+        uint32_t n;
+        *vp = 0;
+        if (song.playing && arrangement_enabled) {
+            ui_message("STOP THE SONG FIRST");
+            break;
+        }
+        if (trk_len(TSEL) >= NSTEP) {
+            ui_message("ALREADY 64 STEPS");
+            break;
+        }
+        undo_mark(TSEL, (undo_sess += 4u) | 3u);
+        n = pattern_double(TSEL);
+        sync_reload = 1;
+        ui.force = 1;
+        str_cpy(b, "LOOP: ", sizeof b);
+        fmt_int(b + str_len(b), (int32_t)n);
+        str_cpy(b + str_len(b), " STEPS", sizeof b - str_len(b));
+        ui_message(b);
+        break;
+    }
     case G_CLRSEQ:
         *vp = 0;
         undo_mark(TSEL, (undo_sess += 4u) | 3u);

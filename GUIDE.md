@@ -456,6 +456,8 @@ Not while recording or armed (the keys record live then). On the drum track, the
 
 The **PATTERN** page (tap SEQ again) holds the track's **LEN**, **DIV**, **SWG** (swing) and **GATE** (how long each note lasts).
 
+**Duplicate the loop:** on **SEQ → PLAY 2**, **KNOB 2 (DUPL)** turned one click copies the whole pattern after its own end: 16 steps become 32, again 64 (the notes or hits, levels, ratchets, nudges, fill / chance conditions and parameter locks). From a length that does not double inside 64, what fits is copied. EDIT + OCT− undoes the steps and the length. **KNOB 1 (GHOST)** on the same page is how often ghost-level notes and hits play.
+
 ### Nudge (micro timing)
 
 **SEQ + step + KNOB 4** moves a step off the grid, from −32 to +31 in 1/64 of a step: minus = early (the step plays before its grid time, inside the previous step), plus = late. Its ratchets move with it; recording and swing stay on the grid. On the drum track the whole step moves, every sound in it. A nudged step shows a dot in the corner of its tile.

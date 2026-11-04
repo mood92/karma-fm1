@@ -805,6 +805,35 @@ static void step_fill_set(track_t *t, uint32_t idx, uint32_t v)
     sh = 2u * (idx % 4u);
     t->fill[idx / 4u] = (uint8_t)((t->fill[idx / 4u] & ~(3u << sh)) | (v & 3u) << sh);
 }
+/* SEQ > PLAY 2 > DUPL: the pattern copied after its own end, the length doubled (up to NSTEP: 16 -> 32 -> 64; past 32 only
+ * what fits is copied): the steps (notes, hits, levels, ratchets), nudges, fill / chance conditions and parameter locks.
+ * Returns the new length, 0 if the pattern was already NSTEP long (or no lock is free: the locks that fit are copied) */
+static uint32_t pattern_double(track_t *t)
+{
+    uint32_t len = trk_len(t), n, i, j, k;
+    if (len >= NSTEP)
+        return 0;
+    n = len * 2u > NSTEP ? NSTEP - len : len;
+    fm1_irq_off();
+    for (i = 0; i < n; i++) {
+        t->step[len + i] = t->step[i];              /* (a drum step is the same ten bytes) */
+        t->micro[len + i] = t->micro[i];
+        step_fill_set(t, len + i, step_fill(t, i));
+    }
+    for (j = 0; j < NLOCK; j++) {
+        if (t->lock[j].step >= n)                   /* (LOCK_FREE is 0xFF; the copies, at len or more, are skipped too) */
+            continue;
+        for (k = 0; k < NLOCK && t->lock[k].step != LOCK_FREE; k++)
+            ;
+        if (k == NLOCK)
+            break;
+        t->lock[k] = t->lock[j];
+        t->lock[k].step = (uint8_t)(t->lock[j].step + len);
+    }
+    t->p[P_SLEN] = (int16_t)(len + n);
+    fm1_irq_on();
+    return len + n;
+}
 static volatile uint8_t fill_held;           /* GLO + key 9 down (the UI) */
 static volatile uint8_t fill_arm;            /* GLO + key 10: the next bar is a fill (the UI; the ISR clears it) */
 static uint8_t fill_bar_on;                  /* that bar, while it plays (the ISR) */

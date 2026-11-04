@@ -118,6 +118,7 @@ enum {                          /* global parameters */
                                             /* PROG BARS the FM-1's, not in a project */
     G_PLGHO,                                /* SEQ > PLAY 2: GHOST, how often a ghost-level note or hit plays (seq.c pl_ghost; the selected
                                              * track's, ui_studio.c play_ui_sync). 100 % = every one plays, as before */
+    G_PDUP,                                 /* SEQ > PLAY 2: DUPL, a GO button: the pattern again after its end, up to 64 steps (seq.c pattern_double) */
     G_COUNT
 };
 
