@@ -844,12 +844,15 @@ static void draw_foot(void)
 {
     const page_t *pg = cur_page();
     uint32_t i, n = 0, k = 0;
-    for (i = 0; i < NPAGES && !ui.home; i++)
-        if (PAGES[i].fam == pg->fam && (page_shown(&PAGES[i]) || i == ui.page)) {   /* (the pages it has) */
-            n++;
-            if (i == ui.page)
-                k = n;
-        }
+    if (!ui.home && pg->fam == FAM_SEQ)
+        n = seq_pager(&k);                                 /* (the drum track: KIT is a square too) */
+    else
+        for (i = 0; i < NPAGES && !ui.home; i++)
+            if (PAGES[i].fam == pg->fam && (page_shown(&PAGES[i]) || i == ui.page)) {   /* (the pages it has) */
+                n++;
+                if (i == ui.page)
+                    k = n;
+            }
     op_pages(k, n, &ui.foot_sig);
 }
 static void draw_columns_set(void);

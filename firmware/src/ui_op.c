@@ -205,7 +205,7 @@ static void op_sprite(const uint8_t *d, int32_t x0, int32_t y0, int flip, uint16
  * KNOB 1 is blue, the sticks go to what is hit), the step in large digits, the 16 x 16 steps of this
  * page in small at the right, then the 16 steps of KNOB 1's sound as the 16 white keys. */
 #define OP_SCENE_H 96
-#define OP_STEPS_H 36
+#define OP_STEPS_H 28                          /* (up to y 146: the page squares are under it, op_pages) */
 
 /* an arc of an ellipse, a0 .. a1 in 1/1024 turns (0 = right, 256 = down), as 2 px chords */
 static void op_arc(int32_t cx, int32_t cy, int32_t rx, int32_t ry, uint32_t a0, uint32_t a1, uint16_t c)
@@ -366,16 +366,16 @@ static void op_drum_steps(uint32_t bank, uint32_t len)
         if (p >= len)
             continue;
         if (dstep_has(s, drum_lane)) {
-            cv_rect(x, 4, 12, 22, lvl_col(dstep_lvl(s, drum_lane)));
+            cv_rect(x, 4, 12, 18, lvl_col(dstep_lvl(s, drum_lane)));
             for (r = 0; r < dstep_rat(s, drum_lane); r++)
                 cv_rect(x + 2, 7 + (int32_t)r * 4, 8, 2, C_BLACK);
         } else {
-            op_box(x, 4, 12, 22, j % 4u ? OP_PUR_D : OP_PUR);
+            op_box(x, 4, 12, 18, j % 4u ? OP_PUR_D : OP_PUR);
         }
         if (p == drum_cursor)
-            op_box(x - 2, 2, 16, 26, C_WHITE);
+            op_box(x - 2, 2, 16, 22, C_WHITE);
         if (song.playing && p == TDRUM->seq_idx % len)
-            cv_rect(x, 31, 12, 2, C_WHITE);
+            cv_rect(x, 25, 12, 2, C_WHITE);
     }
     cv_blit(0, OP_BODY_Y + OP_SCENE_H);
 }

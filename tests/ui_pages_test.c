@@ -1342,8 +1342,24 @@ int main(int argc, char **argv)
         studio_open(SC_DRUM); drum_page = 0; frames(2);
         tap(B_SEQ); frames(2);
         check(on_drum_page() && drum_page == 1u, "DRUMS: SEQ, GRID -> KIT");
-        tap(B_SEQ); frames(2);
-        check(!ui.home && !strcmp(PAGES[ui.page].title, "DRUM GEN"), "DRUMS: SEQ on KIT -> SEQ > DRUM GEN");
+        {   /* SEQ again and again, the drum track: GRID, KIT, then every page, a square each time, SONG, GRID */
+            static const char *const W[] = {"PATTERN", "PLAY", "PLAY 2", "DRUM GEN", "DRUM GEN 2", "SONG"};
+            uint32_t w, kk, nn, ok = 1;
+            nn = seq_pager(&kk);
+            ok &= nn == 8u && kk == 2u;                           /* KIT: the second of eight */
+            for (w = 0; w < 6u; w++) {
+                tap(B_SEQ); frames(2);
+                nn = seq_pager(&kk);
+                ok &= !ui.home && !strcmp(PAGES[ui.page].title, W[w]) && nn == 8u && kk == w + 3u;
+            }
+            check(ok, "drum track: SEQ again and again -> PATTERN .. SONG, a square each time (8)");
+            tap(B_SEQ); frames(2);
+            nn = seq_pager(&kk);
+            check(on_drum_page() && drum_page == 0u && kk == 1u && nn == 8u, "drum track: SEQ on SONG -> the GRID, the first square");
+            tap(B_SEQ); frames(2); tap(B_SEQ); frames(2); tap(B_SEQ); frames(2);
+            tap(B_SEQ); frames(2); tap(B_SEQ); frames(2);
+        }
+        check(!ui.home && !strcmp(PAGES[ui.page].title, "DRUM GEN"), "DRUMS: SEQ x5 from the GRID -> DRUM GEN");
         song.g[G_DGMODE] = 1; song.g[G_DGX] = 20; song.g[G_DGY] = 90; frames(2);
         song.playing = 1; TDRUM->seq_idx = 6; ui.force = 1; frame();
         ppm("page-dgen");
@@ -1356,8 +1372,8 @@ int main(int argc, char **argv)
         check(!ui.home && !strcmp(PAGES[ui.page].title, "DRUM GEN 2"), "DRUM GEN: SEQ -> DRUM GEN 2 (every page by its button)");
         song.g[G_DGMODE] = 2; ui.force = 1; frames(2);
         ppm("page-dgen2");
-        tap(B_SEQ); frames(2);
-        check(on_drum_page() && drum_page == 0u, "DRUM GEN: SEQ -> back to the GRID");
+        tap(B_SEQ); frames(2); tap(B_SEQ); frames(2);
+        check(on_drum_page() && drum_page == 0u, "DRUM GEN 2: SEQ, SEQ -> SONG, the GRID");
         song.g[G_DGMODE] = 0; frames(2);
         track_select(0); frames(2);
         open_family(FAM_SEQ); frames(2);

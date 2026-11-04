@@ -516,6 +516,27 @@ static void pads_tick(void)                             /* once a frame: the hit
         }
 }
 
+static void op_pages(uint32_t k, uint32_t n, uint32_t *cache);   /* ui_op.c */
+
+/* SEQ's pages as the squares count them. On the drum track the DRUMS screens stand for STEP and the KIT screen is
+ * a square of its own (so SEQ, tapped again and again, moves one square each time). k: the square lit, 0 if none */
+static uint32_t seq_pager(uint32_t *k)
+{
+    uint32_t i, n = 0, drum = is_drum(TSEL);
+    *k = 0;
+    for (i = 0; i < NPAGES; i++)
+        if (PAGES[i].fam == FAM_SEQ && (page_shown(&PAGES[i]) || i == ui.page)) {
+            n++;
+            if (i == ui.page && !ui.home)
+                *k = n;
+            if (drum && PAGES[i].scope == SC_STEP)
+                n++;                                    /* (KIT: the square after the grid's) */
+        }
+    if (on_drum_page())
+        *k = drum_page ? 2u : 1u;
+    return n;
+}
+
 static void drum_screen_draw(void)
 {
     static uint32_t head, scene_sig, steps_sig, body_sig, footer, bar;
@@ -603,6 +624,11 @@ static void drum_screen_draw(void)
             op_knobs(LK, val, 0, ratio, 0, 2u, &footer);
         }
     }
+    {
+        static uint32_t pager;
+        uint32_t k, n = seq_pager(&k);
+        op_pages(k, n, &pager);                         /* the squares: GRID is the first, KIT the second */
+    }
     op_trackbar(&bar);
 }
 
@@ -657,7 +683,7 @@ static void grid_key(uint32_t k)
     sync_reload = 1;
 }
 
-/* DRUMS: SEQ -> GRID -> KIT -> SEQ > DRUM GEN (SEQ there: back to the GRID) */
+/* DRUMS: SEQ -> GRID -> KIT -> SEQ > PATTERN, PLAY, PLAY 2, DRUM GEN, DRUM GEN 2, SONG -> GRID (a square each time) */
 static void drum_seq_tap(void)
 {
     uint32_t i;
@@ -669,13 +695,20 @@ static void drum_seq_tap(void)
     }
     drum_page = 0;
     for (i = 0; i < NPAGES; i++)
-        if (str_eq(PAGES[i].title, "DRUM GEN")) {
+        if (str_eq(PAGES[i].title, "PATTERN")) {
             ui.page = (uint8_t)i;
             ui.fam_last[FAM_SEQ] = (uint8_t)i;
             ui.home = 0;
             page_entered();
             ui.force = 1;
         }
+}
+
+/* the last SEQ page (SONG) tapped again, on the drum track: round to the GRID, the first square */
+static void drum_seq_wrap(void)
+{
+    drum_page = 0;
+    studio_open(SC_DRUM);
 }
 
 static void drum_screen_input(uint32_t pressed, uint32_t home)
