@@ -50,3 +50,44 @@ jobs:
           name: KARMA-ghost-chance
           path: out/KARMA-ghost-chance.fwsc
           if-no-files-found: error
+
+  # The same firmware as a browser emulator (WebAssembly), so the branch can be tried without flashing.
+  # The emulator is NOT the .fwsc: the website's emulator is built from main, so it never shows this branch.
+  # Needs a web server (a browser will not load sloop.wasm / worklet.js from a plain file): see the README in the zip.
+  emulator:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
+      - name: Python packages
+        run: python3 -m pip install Pillow
+
+      - name: Generated headers (fonts, icons, tables, samples)
+        run: python3 -c "import sys; sys.path.insert(0, 'tools'); import build as b; b.generate()"
+
+      - uses: mymindstorm/setup-emsdk@v14
+
+      - name: Build the browser emulator (WebAssembly)
+        run: sh web/emu/build.sh
+
+      - name: How to open it
+        run: |
+          printf '%s\n' \
+            'KARMA ghost-chance emulator' \
+            '' \
+            '1. Unzip this folder.' \
+            '2. Open a terminal IN the folder and run:   python3 -m http.server 8000' \
+            '   (Windows: py -m http.server 8000)' \
+            '3. In Chrome go to   http://localhost:8000' \
+            '4. Click to switch it on. SEQ pages: STEP, PATTERN, PLAY, PLAY 2 (GHOST).' \
+            > build/emu/README.txt
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: KARMA-ghost-chance-emulator
+          path: build/emu
+          if-no-files-found: error
