@@ -677,8 +677,13 @@ static void layer_tap(uint32_t layer)
             drum_seq_tap();
             break;
         }
+        if (layer == LY_STEP && !ui.home && cur_page()->graph == GR_DGEN && ui.page + 1u < NPAGES &&
+            PAGES[ui.page + 1u].graph == GR_DGEN) {       /* DRUM GEN has a second page: SEQ -> it, as every button's pages */
+            open_family(FAM_SEQ);
+            break;
+        }
         if (layer == LY_STEP && !ui.home && (cur_page()->graph == GR_HEX || cur_page()->graph == GR_DGEN)) {
-                                                          /* the sound's pages, DRUM GEN: SEQ -> back */
+                                                          /* the sound's pages, DRUM GEN (its last page): SEQ -> back */
             studio_open(SC_DRUM);                         /* to the drums */
             break;
         }

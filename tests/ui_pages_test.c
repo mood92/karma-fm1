@@ -1350,6 +1350,10 @@ int main(int argc, char **argv)
         song.playing = 0;
         encs[panel.enc[EN_SELECT]] = 1; frames(3);
         check(!strcmp(PAGES[ui.page].title, "DRUM GEN 2"), "DRUM GEN: SELECT -> DRUM GEN 2");
+        encs[panel.enc[EN_SELECT]] = -1; frames(3);
+        check(!strcmp(PAGES[ui.page].title, "DRUM GEN"), "DRUM GEN 2: SELECT back -> DRUM GEN");
+        tap(B_SEQ); frames(2);
+        check(!ui.home && !strcmp(PAGES[ui.page].title, "DRUM GEN 2"), "DRUM GEN: SEQ -> DRUM GEN 2 (every page by its button)");
         song.g[G_DGMODE] = 2; ui.force = 1; frames(2);
         ppm("page-dgen2");
         tap(B_SEQ); frames(2);
