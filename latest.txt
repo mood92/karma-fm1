@@ -1,5 +1,5 @@
-commit: 4d806b9832b5c052fd8162b8b7e9a8beb631e103
-job status: cancelled
+commit: e63615fd6e5cb0e60b064dae37fffe6d245bea38
+job status: failure
 
 == build log (last 120 lines)
 (no build.log)
