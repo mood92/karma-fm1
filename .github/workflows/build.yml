@@ -33,12 +33,13 @@ jobs:
         run: sh tools/get_toolchain.sh
 
       - name: JieLi AC79 SDK (three files of it go into the package)
+        timeout-minutes: 20
         run: |
-          for i in 1 2 3; do                     # (gitee.com drops a clone now and then: try again)
-            git clone --depth 1 --branch AC79NN_SDK_V1.2.1_2023-12-13 \
+          for i in 1 2 3 4 5 6; do               # (gitee.com drops or stalls a clone now and then: time it out, try again)
+            timeout 150 git clone --depth 1 --branch AC79NN_SDK_V1.2.1_2023-12-13 \
                 https://gitee.com/Jieli-Tech/fw-AC79_AIoT_SDK.git ~/fw-AC79_AIoT_SDK && break
             rm -rf ~/fw-AC79_AIoT_SDK
-            sleep 20
+            sleep 30
           done
           test -d ~/fw-AC79_AIoT_SDK
 
