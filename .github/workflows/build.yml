@@ -79,6 +79,9 @@ jobs:
             echo
             echo "== ELF sections (felucca.elf)"
             readelf -S -W build/felucca.elf 2>&1 | head -80 || true
+            echo
+            echo "== where the bytes go (tools/size_report.py)"
+            python3 tools/size_report.py build/felucca.elf 2>&1 || true
           } > /tmp/rep/report.txt
           rm -rf /tmp/bl && mkdir /tmp/bl && cd /tmp/bl
           git init -q
