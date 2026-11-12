@@ -1,4 +1,4 @@
-commit: ca9291ffd18736ac1f592475335e8f54f95c2266
+commit: dd8f0e64c2812dc8731bfa75837b4cdaf935f541
 job status: success
 
 == build log (last 120 lines)
@@ -22,12 +22,12 @@ loader   /home/runner/work/karma-fm1/karma-fm1/build/loader/ota.bin  6887 B
 package  /home/runner/work/karma-fm1/karma-fm1/build/felucca.fwsc  610043 B, identity FM-1_926
 
 == image files
--rw-r--r-- 1 runner runner   3856 Nov 12 06:03 build/data.bin
--rw-r--r-- 1 runner runner 521752 Nov 12 06:03 build/felucca.bin
--rw-r--r-- 1 runner runner 610043 Nov 12 06:03 build/felucca.fwsc
--rw-r--r-- 1 runner runner 610043 Nov 12 06:03 build/karma.fwsc
--rw-r--r-- 1 runner runner   3120 Nov 12 06:03 build/ramtext.bin
--rw-r--r-- 1 runner runner 514776 Nov 12 06:03 build/text.bin
+-rw-r--r-- 1 runner runner   3856 Nov 12 06:05 build/data.bin
+-rw-r--r-- 1 runner runner 521752 Nov 12 06:05 build/felucca.bin
+-rw-r--r-- 1 runner runner 610043 Nov 12 06:05 build/felucca.fwsc
+-rw-r--r-- 1 runner runner 610043 Nov 12 06:05 build/karma.fwsc
+-rw-r--r-- 1 runner runner   3120 Nov 12 06:05 build/ramtext.bin
+-rw-r--r-- 1 runner runner 514776 Nov 12 06:05 build/text.bin
 
 == ELF sections (felucca.elf)
 There are 11 section headers, starting at offset 0x8ef1c:
@@ -50,3 +50,115 @@ Key to Flags:
   L (link order), O (extra OS processing required), G (group), T (TLS),
   C (compressed), x (unknown), o (OS specific), E (exclude),
   D (mbind), p (processor specific)
+
+== where the bytes go (tools/size_report.py)
+sections: .text 514776, .data 3856, .bss 91992, .pool 335856
+
+== .text: 505711 B in sized symbols; by group
+    267616  other
+    134841  plaits
+     32451  sequencer/ui
+     28222  elements
+     11646  drums
+     11508  acid
+      6811  prism
+      4710  phys
+      3654  juno
+      3168  stmlib/mi
+      1084  fx/reverb/delay
+  -- biggest 18 symbols in .text
+     50688  plaits::wav_integrated_waves
+     20146  ui_draw
+     16388  elements::lut_sine
+     14468  mix_block
+     14394  draw_graph
+     11648  DS_KITS
+     11240  ed_handle
+     10122  events_block
+      8720  fm1_main
+      8584  ui_input
+      8428  acid_render
+      8216  layer_screen_draw
+      8192  JN_VCF_G1
+      5824  OP_SPR_BUDDHA
+      5824  OP_SPR_BUDDHA_LEAN
+      5824  OP_SPR_GORILLA
+      5824  OP_SPR_GORILLA_UP
+      5824  OP_SPR_WIZARD
+
+== .data: 4982 B in sized symbols; by group
+      2554  drums
+      2297  other
+        76  elements
+        29  sequencer/ui
+        16  acid
+         4  prism
+         4  stmlib/mi
+         2  clouds
+  -- biggest 18 symbols in .data
+      2548  drums
+       468  .L_MergedGlobals.1234
+       424  .L_MergedGlobals
+       272  .L_MergedGlobals.1235
+       272  lim_dac
+       272  lim_usb
+       196  tx
+       192  punch
+        76  elements::lookup_table_table
+        32  dust
+        20  cdc
+        16  acid_gen_sync.was
+        16  gen_ui_sync.dg_was
+        16  midi_knob_last
+         8  gk_ui
+         8  midi_chan_fix.was
+         6  midi_set
+         4  click_last
+
+== .bss: 106005 B in sized symbols; by group
+    102827  other
+      1288  drums
+       987  clouds
+       809  sequencer/ui
+        80  prism
+         6  fx/reverb/delay
+         5  acid
+         3  phys
+  -- biggest 18 symbols in .bss
+     17368  rev_line
+      8448  trk
+      6160  up_bank
+      5280  ua_ring
+      4096  abuf
+      4060  ins
+      3840  proj_tmp
+      3840  st_buf
+      2584  proj_v3_tmp
+      2048  midi_sel_on
+      1792  usr_zone
+      1536  vis_lj
+      1464  dsu
+      1152  ft_ev
+      1024  ota_stage.hdr
+      1024  scope_buf
+      1024  scope_bufr
+      1024  vis_l
+
+== .pool: 335854 B in sized symbols; by group
+    332014  other
+      3840  sequencer/ui
+  -- biggest 18 symbols in .pool
+    131072  dly_buf
+     65536  punch_ring
+     59520  cv_px
+     32768  sl_buf
+     16640  eng_arena2
+      8592  eng_arena1
+      4096  cho_buf
+      3840  autosave_buf
+      3840  song_keep
+      3456  vis_sg
+      2452  eng_arena0
+      1994  rev_ap
+      1024  vis_im
+      1024  vis_re
