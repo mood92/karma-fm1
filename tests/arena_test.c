@@ -37,7 +37,7 @@ static const cfg_t CFG[] = {   /* (2026-10-19: the engines that are left: ACID, 
     {ENGI_ACID, 0, -1, "ACID TB ACID"}, {ENGI_JUNO, 24, -1, "JUNO SUB BASS"}, {ENGI_JUNO, 21, -1, "JUNO BASS"},
     {ENGI_PRISM, 11, -1, "PLAITS CP-70 GRAND (VA)"}, {ENGI_PRISM, 13, -1, "PLAITS M1 PIANO (WAVE)"},
     {ENGI_ELEM, 0, 0, "ELEMENTS BOUNCE"}, {ENGI_ELEM, 0, 1, "ELEMENTS PICK"}, {ENGI_ELEM, 1, 2, "ELEMENTS BOW (solo)"},
-    {ENGI_ELEM, 2, 3, "ELEMENTS BLOW (solo)"}, {ENGI_ELEM, 0, 4, "ELEMENTS OMIN (Ominous Voice)"},
+    {ENGI_ELEM, 2, 3, "ELEMENTS BLOW (solo)"},
     {ENGI_PRISM, 16, -1, "PLAITS MODAL (her C++)"},
     {ENGI_PRISM, 18, -1, "PLAITS HOUSE STAB (CHORD: its own model, in the same arena)"},   /* (2026-10-31, Ariel's
                                 * song: CHORD wrote the arena, Plaits' MODAL then ran a stale instance: a crash) */

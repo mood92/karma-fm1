@@ -7,7 +7,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include "plx.h"
-#include "elx.h"
 
 static const char *const NAME[PLX_COUNT] = {"VA", "VCF", "PD", "FM", "6OP A", "6OP B", "6OP C", "GRAIN", "TERRAIN",
                                             "STRMACH", "CHIP", "STRING", "MODAL", "NOISE", "SPEECH", "PARTICLE", "BD",
@@ -48,30 +47,6 @@ int main(void)
             printf("plx: %-8s %6u B  peak %.2f rms %.3f %s\n", NAME[m], n, peak, sqrt(e / (44100.0 * 2)), ok ? "ok" : "FAIL");
             fails += !ok;
         }
-        free(mem);
-    }
-    {   /* ELX: Elements' Ominous Voice */
-        unsigned n = elx_size(), i, k;
-        unsigned char *mem = malloc(n + 4096);
-        double e = 0, peak = 0;
-        int bad = 0, guard = 0, ok;
-        memset(mem, 0xA5, n + 4096);
-        elx_init(mem);
-        for (k = 0; k < 44100u * 2u / 16u; k++) {
-            elx_params_t q = {48.0f, 0.8f, 0.4f, 0.6f, 0.4f, 0.3f, 0.5f, 0.3f, 0.4f};
-            float o[16];
-            elx_render(mem, &q, k < 44100u / 16u, o, 16);
-            for (i = 0; i < 16u; i++) {
-                bad += !isfinite(o[i]) || fabsf(o[i]) > 4.0f;
-                peak = fabsf(o[i]) > peak ? fabsf(o[i]) : peak;
-                e += o[i] * o[i];
-            }
-        }
-        for (i = 0; i < 4096u; i++)
-            guard += mem[n + i] != 0xA5;
-        ok = !bad && !guard && peak > 0.01;
-        printf("plx: %-8s %6u B  peak %.2f rms %.3f %s\n", "OMIN", n, peak, sqrt(e / (44100.0 * 2)), ok ? "ok" : "FAIL");
-        fails += !ok;
         free(mem);
     }
     printf(fails ? "plx: FAILED\n" : "plx: all models ok\n");

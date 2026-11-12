@@ -99,13 +99,9 @@ static const param_desc_t *phys_desc(const track_t *t, uint32_t k)
     return k < 8u ? PHYS_DESC[phys_md(t, 0)][k] : 0;
 }
 #define ELEM_OMIN 4u                     /* ELEMENTS' MODEL after BLOW: her Ominous Voice (eng_elem.c, not PHYS's code) */
-static uint8_t elx_ready[NPART];         /* the part's arena holds an Ominous Voice set up (eng_elem.c) */
-static int elem_omin(const track_t *t) { return t->p[P_E0] == (int16_t)ELEM_OMIN; }
-static const param_desc_t *omin_desc(uint32_t k);
+static int elem_omin(const track_t *t) { (void)t; return 0; }   /* the Ominous Voice is out of this build (it was a drone) */
 static const param_desc_t *elem_desc(const track_t *t, uint32_t k)
 {
-    if (elem_omin(t))
-        return omin_desc(k);
     return k < 8u ? PHYS_DESC[phys_md(t, 1)][k] : 0;
 }
 
@@ -141,7 +137,7 @@ static uint32_t phys_poly_md(uint32_t md)
     return N[phys_layout(md)];
 }
 static uint32_t phys_poly(const track_t *t) { return phys_poly_md(phys_md(t, 0)); }
-static uint32_t elem_poly(const track_t *t) { return elem_omin(t) ? 1u : phys_poly_md(phys_md(t, 1)); }
+static uint32_t elem_poly(const track_t *t) { return phys_poly_md(phys_md(t, 1)); }
 static phys_slot_t *phys_slot_of(track_t *t, voice_t *v, uint32_t elem)
 {
     uint32_t md = phys_md(t, elem);
@@ -157,7 +153,6 @@ static phys_slot_t *phys_slot_of(track_t *t, voice_t *v, uint32_t elem)
     a = (uint8_t *)eng_arena_of(t, elem ? ENGI_ELEM : ENGI_PHYS);
     if (!a)
         return 0;                                        /* (a part whose arena is too small: silent) */
-    elx_ready[p] = 0;                                    /* (the slots overwrite an Ominous Voice) */
     sz = big == 1u ? PHYS_SLOT_BIG : PHYS_SLOT_SMALL;      /* (solo: the one slot at the start) */
     if (phys_lay[p] != big + 1u) {                       /* the other layout: every slot starts over */
         for (k = 0; k < phys_poly_md(md); k++)
