@@ -1,13 +1,20 @@
 # Build the firmware package on GitHub (the JieLi compiler runs on Linux x86-64 only).
 # Run it by hand: Actions tab > build > Run workflow. The package is in the run's "Artifacts" box.
 # Pattern from Dinghy's release workflow (zvenson/dinghy). GPL-3.0-only, as the rest of the repo.
+#
+# fm-link branch (KARMA + FM-Link over Bluetooth): every push to this branch builds, and a short report
+# (the build log's tail, the image and section sizes) is pushed to the `build-logs` branch, so a failed or
+# too-big build can be read without opening the Actions page.
 name: build
 
 on:
   workflow_dispatch:
   push:
-    branches: [main]
+    branches: [main, fm-link]
     paths: ['firmware/**', 'tools/**', 'assets/**', 'build.sh', '.github/workflows/build.yml']
+
+permissions:
+  contents: write
 
 jobs:
   firmware:
@@ -36,7 +43,10 @@ jobs:
           test -d ~/fw-AC79_AIoT_SDK
 
       - name: Build
-        run: sh build.sh
+        shell: bash
+        run: |
+          set -o pipefail
+          sh build.sh 2>&1 | tee build.log
 
       - name: Package files
         run: ls -l build/*.fwsc build/*.bin
@@ -44,10 +54,44 @@ jobs:
       - name: Name the package
         run: |
           mkdir -p out
-          cp build/karma.fwsc out/MainMenu-LivePlayer.fwsc
+          cp build/karma.fwsc out/KARMA-FMLink.fwsc
 
       - uses: actions/upload-artifact@v4
         with:
-          name: MainMenu-LivePlayer
-          path: out/MainMenu-LivePlayer.fwsc
+          name: KARMA-FMLink
+          path: out/KARMA-FMLink.fwsc
           if-no-files-found: error
+
+      - name: Publish a build report to the build-logs branch
+        if: always() && github.ref == 'refs/heads/fm-link'
+        shell: bash
+        run: |
+          mkdir -p /tmp/rep
+          {
+            echo "commit: $GITHUB_SHA"
+            echo "job status: ${{ job.status }}"
+            echo
+            echo "== build log (last 120 lines)"
+            tail -n 120 build.log 2>/dev/null || echo "(no build.log)"
+            echo
+            echo "== image files"
+            ls -l build/*.bin build/*.fwsc 2>&1 || true
+            echo
+            echo "== ELF sections (felucca.elf)"
+            readelf -S -W build/felucca.elf 2>&1 | head -80 || true
+          } > /tmp/rep/report.txt
+          rm -rf /tmp/bl && mkdir /tmp/bl && cd /tmp/bl
+          git init -q
+          git config user.name "build"
+          git config user.email "build@users.noreply.github.com"
+          git remote add origin "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git"
+          if git fetch -q --depth 1 origin build-logs 2>/dev/null; then
+            git checkout -q -b build-logs FETCH_HEAD
+          else
+            git checkout -q --orphan build-logs
+          fi
+          cp /tmp/rep/report.txt "report-${GITHUB_SHA::7}.txt"
+          cp /tmp/rep/report.txt latest.txt
+          git add -A
+          git commit -q -m "build report ${GITHUB_SHA::7}"
+          git push -q origin build-logs
