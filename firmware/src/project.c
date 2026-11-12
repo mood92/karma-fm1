@@ -353,7 +353,7 @@ static int proj_from_v3(project_t *q, const project_v3_t *v3, int n)
     return 1;
 }
 
-static project_v3_t proj_v3_tmp;               /* (formats 1, 2: through format 3) */
+static project_v3_t proj_v3_tmp __attribute__((section(".pool")));               /* (formats 1, 2: through format 3) */
 /* a format 2 project (n bytes in *v2) -> slot q as format 5 */
 static int proj_from_v2(project_t *q, const project_v2_t *v2, int n)
 {
@@ -625,7 +625,7 @@ static union {
     project_v3_t v3;
     project_v2_t v2;
     project_v1_t v1;
-} proj_tmp;
+} proj_tmp __attribute__((section(".pool")));
 static void proj_fetch(uint32_t slot)
 {
     project_t *q = &proj_slot[slot & 3u];
