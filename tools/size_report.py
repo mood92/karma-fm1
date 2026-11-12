@@ -61,6 +61,6 @@ for sec in (".text", ".data", ".bss", ".pool"):
         agg[g] = agg.get(g, 0) + size
     for g, v in sorted(agg.items(), key=lambda kv: -kv[1]):
         print(f"  {v:8d}  {g}")
-    print(f"  -- biggest 18 symbols in {sec}")
-    for _, size, name in sorted(rows, key=lambda s: -s[1])[:18]:
+    print(f"  -- biggest 90 symbols in {sec}")
+    for _, size, name in sorted(rows, key=lambda s: -s[1])[:90]:
         print(f"  {size:8d}  {name[:90]}")
