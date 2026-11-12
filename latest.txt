@@ -1,4 +1,4 @@
-commit: dd8f0e64c2812dc8731bfa75837b4cdaf935f541
+commit: 6b61b9de43d01862d18febbb9aa9e39acacccb73
 job status: success
 
 == build log (last 120 lines)
@@ -22,12 +22,12 @@ loader   /home/runner/work/karma-fm1/karma-fm1/build/loader/ota.bin  6887 B
 package  /home/runner/work/karma-fm1/karma-fm1/build/felucca.fwsc  610043 B, identity FM-1_926
 
 == image files
--rw-r--r-- 1 runner runner   3856 Nov 12 06:05 build/data.bin
--rw-r--r-- 1 runner runner 521752 Nov 12 06:05 build/felucca.bin
--rw-r--r-- 1 runner runner 610043 Nov 12 06:05 build/felucca.fwsc
--rw-r--r-- 1 runner runner 610043 Nov 12 06:05 build/karma.fwsc
--rw-r--r-- 1 runner runner   3120 Nov 12 06:05 build/ramtext.bin
--rw-r--r-- 1 runner runner 514776 Nov 12 06:05 build/text.bin
+-rw-r--r-- 1 runner runner   3856 Nov 12 19:37 build/data.bin
+-rw-r--r-- 1 runner runner 521752 Nov 12 19:37 build/felucca.bin
+-rw-r--r-- 1 runner runner 610043 Nov 12 19:37 build/felucca.fwsc
+-rw-r--r-- 1 runner runner 610043 Nov 12 19:37 build/karma.fwsc
+-rw-r--r-- 1 runner runner   3120 Nov 12 19:37 build/ramtext.bin
+-rw-r--r-- 1 runner runner 514776 Nov 12 19:37 build/text.bin
 
 == ELF sections (felucca.elf)
 There are 11 section headers, starting at offset 0x8ef1c:
@@ -66,7 +66,7 @@ sections: .text 514776, .data 3856, .bss 91992, .pool 335856
       3654  juno
       3168  stmlib/mi
       1084  fx/reverb/delay
-  -- biggest 18 symbols in .text
+  -- biggest 90 symbols in .text
      50688  plaits::wav_integrated_waves
      20146  ui_draw
      16388  elements::lut_sine
@@ -85,6 +85,78 @@ sections: .text 514776, .data 3856, .bss 91992, .pool 335856
       5824  OP_SPR_GORILLA
       5824  OP_SPR_GORILLA_UP
       5824  OP_SPR_WIZARD
+      5376  FONT_S_DATA
+      4802  plaits::bank_4
+      4286  prism_render
+      4096  plaits::syx_bank_2
+      4096  plaits::syx_bank_0
+      4096  plaits::syx_bank_1
+      3302  edit_param
+      3268  hex_render
+      3256  usb_poll
+      2814  drums_mix
+      2564  plaits::lut_sine
+      2526  mix_part_run
+      2524  plaits::bank_3
+      2496  OP_SPR_SAUCER
+      2400  DG_NODE
+      2160  GP
+      2050  LX_REC4
+      2050  PR_SINE
+      1920  UAC_FIR
+      1862  bass303_set
+      1780  HEX_KITS
+      1694  juno_render
+      1684  pr_wave_render
+      1682  plaits::SixOpEngine::Render(plaits::EngineParameters const&, float*, float*, unsigned long
+      1626  trk_note_on
+      1600  PRESET_TRIM
+      1588  proj_import
+      1560  layer_key
+      1552  plaits::bank_2
+      1548  PRISM_PRESETS
+      1496  ota_session
+      1420  TP
+      1406  px_string_block
+      1400  plaits::fm::Voice<6>::Render(plaits::fm::Voice<6>::Parameters const&, float**, unsigned lo
+      1386  proj_apply
+      1378  elements::OminousVoice::Process(elements::Patch const&, float, float, bool, float const*, 
+      1372  plaits::AnalogSnareDrum::Render(bool, bool, float, float, float, float, float, float*, uns
+      1358  plaits::LPCSpeechSynthWordBank::LoadNextWord(unsigned char const*)
+      1356  px_modal_run
+      1342  plaits::SyntheticSnareDrum::Render(bool, bool, float, float, float, float, float, float*, 
+      1300  LX_TR_CLAP
+      1300  LX_TR_KICK
+      1300  LX_TR_SNR
+      1284  px_bow_run
+      1278  plaits::VirtualAnalogVCFEngine::Render(plaits::EngineParameters const&, float*, float*, un
+      1238  phys_render_e
+      1233  plaits::bank_0
+      1198  plaits::SyntheticBassDrum::Render(bool, bool, float, float, float, float, float, float, fl
+      1188  void plaits::VariableShapeOscillator::Render<true, true>(float, float, float, float, float
+      1186  plx_init
+      1178  ed_service
+      1168  plaits::NoiseEngine::Render(plaits::EngineParameters const&, float*, float*, unsigned long
+      1152  JUNO_PRESETS
+      1152  MM_LOGO_BIG
+      1152  void plaits::String::ProcessInternal<(plaits::StringNonLinearity)1>(float, float, float, f
+      1148  lx_osc
+      1140  fm1_timer5_irq
+      1104  plaits::FMEngine::Render(plaits::EngineParameters const&, float*, float*, unsigned long, b
+      1100  LX_TR_HAT
+      1100  LX_TR_TICK
+      1098  px_blow_run
+      1080  void plaits::VariableShapeOscillator::Render<true, false>(float, float, float, float, floa
+      1064  plaits::WaveTerrainEngine::Terrain(float, float, int)
+      1040  plaits::VirtualAnalogEngine::Render(plaits::EngineParameters const&, float*, float*, unsig
+      1032  PR_FOLD
+      1032  elements::lut_env_quartic
+      1032  elements::lut_env_expo
+      1032  elements::lut_env_linear
+      1032  elements::lut_env_increments
+      1028  stmlib::lut_pitch_ratio_low
+      1028  stmlib::lut_pitch_ratio_high
+      1028  plaits::lut_svf_shift
 
 == .data: 4982 B in sized symbols; by group
       2554  drums
@@ -95,7 +167,7 @@ sections: .text 514776, .data 3856, .bss 91992, .pool 335856
          4  prism
          4  stmlib/mi
          2  clouds
-  -- biggest 18 symbols in .data
+  -- biggest 90 symbols in .data
       2548  drums
        468  .L_MergedGlobals.1234
        424  .L_MergedGlobals
@@ -114,6 +186,56 @@ sections: .text 514776, .data 3856, .bss 91992, .pool 335856
          8  midi_chan_fix.was
          6  midi_set
          4  click_last
+         4  duck.0
+         4  duck.1
+         4  duck.2
+         4  events_block.chans_was
+         4  fill_last_bar
+         4  fm1_main.applied
+         4  gkf
+         4  live_bar
+         4  lx_rng_state
+         4  master_cur
+         4  mono_play.seed
+         4  op_hex_scene.made
+         4  op_k
+         4  op_prism_panel.key
+         4  op_scene_saucer.alt
+         4  op_scene_sumo.side
+         4  pen_note
+         4  pl_chance
+         4  pl_stride
+         4  pr_rng
+         4  rng_state
+         4  step_edit.len_cur
+         4  undo_sess
+         4  w_mask
+         4  stmlib::Random::rng_state_
+         3  live_slot
+         2  boot_t
+         2  cloud_ui_sync.was
+         2  gen_ui_sync.kb
+         2  gen_ui_sync.km
+         2  gen_ui_sync.kp
+         2  gen_ui_sync.kr
+         2  gen_ui_sync.on_was
+         2  hex_ui_sync.was_sel
+         2  op_ink
+         1  audio_last_half
+         1  fm1_core1_poll.was_online
+         1  gen_ui_sync.sel_was
+         1  gk.2
+         1  key_lit_trk
+         1  last_note
+         1  lights_min
+         1  live_req
+         1  live_sec
+         1  midi_knobs
+         1  op_note
+         1  op_scene_conga.next
+         1  pen_n
+         1  play_ui_sync.sel_was
+         1  song_keep_sec
 
 == .bss: 106005 B in sized symbols; by group
     102827  other
@@ -124,7 +246,7 @@ sections: .text 514776, .data 3856, .bss 91992, .pool 335856
          6  fx/reverb/delay
          5  acid
          3  phys
-  -- biggest 18 symbols in .bss
+  -- biggest 90 symbols in .bss
      17368  rev_line
       8448  trk
       6160  up_bank
@@ -143,11 +265,83 @@ sections: .text 514776, .data 3856, .bss 91992, .pool 335856
       1024  scope_buf
       1024  scope_bufr
       1024  vis_l
+      1024  vis_r
+       664  op_hex_scene.buf
+       652  undo
+       640  ota_dec
+       640  sx_frame
+       600  ed_out
+       596  cloud_cl
+       552  ep4tx
+       512  ed_smp_buf
+       512  ota_stage.b
+       512  ota_stage.mine
+       512  stem_buf
+       508  .L_MergedGlobals.1236
+       504  .L_MergedGlobals.1237
+       504  .L_MergedGlobals.1239
+       504  .L_MergedGlobals.1240
+       496  .L_MergedGlobals.1260
+       486  .L_MergedGlobals.1271
+       486  layer_screen_draw.tl
+       484  .L_MergedGlobals.1238
+       480  lcd_fillbuf
+       472  .L_MergedGlobals.1244
+       472  .L_MergedGlobals.1258
+       456  .L_MergedGlobals.1241
+       448  .L_MergedGlobals.1270
+       448  smp_user_scan.zs
+       436  .L_MergedGlobals.1269
+       436  ui
+       424  .L_MergedGlobals.1242
+       408  .L_MergedGlobals.1243
+       400  .L_MergedGlobals.1268
+       400  op_hex_scene.col
+       392  .L_MergedGlobals.1257
+       384  .L_MergedGlobals.1245
+       384  .L_MergedGlobals.1246
+       384  .L_MergedGlobals.1247
+       384  .L_MergedGlobals.1248
+       384  .L_MergedGlobals.1249
+       384  .L_MergedGlobals.1250
+       384  .L_MergedGlobals.1251
+       384  .L_MergedGlobals.1252
+       384  .L_MergedGlobals.1253
+       384  .L_MergedGlobals.1254
+       384  .L_MergedGlobals.1255
+       384  .L_MergedGlobals.1256
+       370  .L_MergedGlobals.1259
+       358  ed_w.10
+       358  ed_w.9
+       296  .L_MergedGlobals.1267
+       296  vs
+       256  .L_MergedGlobals.1261
+       256  .L_MergedGlobals.1262
+       256  .L_MergedGlobals.1263
+       256  .L_MergedGlobals.1264
+       256  .L_MergedGlobals.1265
+       256  .L_MergedGlobals.1266
+       256  cdc_in
+       256  con_flr.b
+       256  ed_w.11
+       256  midi_in_q
+       256  midi_out_q
+       256  sx_out_q
+       256  usb_out
+       240  song
+       192  ed_handle.r
+       178  cfg_plain
+       176  sl
+       160  tflt
+       142  pnew0
+       142  pnew1
+       136  fm1_in
+       136  rs
 
 == .pool: 335854 B in sized symbols; by group
     332014  other
       3840  sequencer/ui
-  -- biggest 18 symbols in .pool
+  -- biggest 90 symbols in .pool
     131072  dly_buf
      65536  punch_ring
      59520  cv_px
