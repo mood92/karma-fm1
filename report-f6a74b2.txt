@@ -1,0 +1,358 @@
+commit: f6a74b2f4bc4cf4c70d4b5a427cc2f33dd980092
+job status: success
+
+== build log (last 120 lines)
+font S: ter-u16b.bdf 16px h 16, digit adv 8, 5376 B
+font L: ter-u16b.bdf 16px h 32, digit adv 16, the S bitmaps at 2x (0 B)
+icons: 86 of 86 (192x72 L), 3096 B
+tables: /home/runner/work/karma-fm1/karma-fm1/build/gen/felucca_tables.h
+loader: image 8184 B at 0x1c0a800, bss end 0x1c0f3d0
+loader: ota.bin 6887 B
+generated waves into /home/runner/work/karma-fm1/karma-fm1/build/genwav
+samples: 0 sets, 0 zones, 0 B ADPCM
+drum kits: 32 synthesised -> /home/runner/work/karma-fm1/karma-fm1/build/gen/felucca_drumkits.h
+logo: splash 240x188, 3463 B RLE -> /home/runner/work/karma-fm1/karma-fm1/build/gen/sloop_logo.h
+plx: 37 of 37 C++ files compiled
+  ok    .ram_text: 979 insns, no calls
+  ok    image 500200 B; RAM .data+.bss 95832 B of 98304; pool 335856 B of 344064
+  ok    register access: hal/ only (src/, loader/ clean)
+package  /home/runner/work/karma-fm1/karma-fm1/build/karma.fwsc  (the same: flash this one)
+app      /home/runner/work/karma-fm1/karma-fm1/build/felucca.bin  500200 B
+loader   /home/runner/work/karma-fm1/karma-fm1/build/loader/ota.bin  6887 B
+package  /home/runner/work/karma-fm1/karma-fm1/build/felucca.fwsc  610043 B, identity FM-1_926
+
+== image files
+-rw-r--r-- 1 runner runner   3856 Nov 12 19:44 build/data.bin
+-rw-r--r-- 1 runner runner 500200 Nov 12 19:44 build/felucca.bin
+-rw-r--r-- 1 runner runner 610043 Nov 12 19:44 build/felucca.fwsc
+-rw-r--r-- 1 runner runner 610043 Nov 12 19:44 build/karma.fwsc
+-rw-r--r-- 1 runner runner   3120 Nov 12 19:44 build/ramtext.bin
+-rw-r--r-- 1 runner runner 493224 Nov 12 19:44 build/text.bin
+
+== ELF sections (felucca.elf)
+There are 11 section headers, starting at offset 0x895dc:
+
+Section Headers:
+  [Nr] Name              Type            Addr     Off    Size   ES Flg Lk Inf Al
+  [ 0]                   NULL            00000000 000000 000000 00      0   0  0
+  [ 1] .text             PROGBITS        02000120 000320 0786a8 00  AX  0   0 16
+  [ 2] .ram_text         PROGBITS        01c00000 078d00 000c30 00  AX  0   0  2
+  [ 3] .data             PROGBITS        01c08000 079a00 000f10 00  WA  0   0 16
+  [ 4] .bss              NOBITS          01c08f20 07a920 016738 00  WA  0   0 32
+  [ 5] .pool             NOBITS          01c20000 000500 051ff0 00  WA  0   0  4
+  [ 6] .noinit           NOBITS          01c7c000 000200 003cd0 00  WA  0   0  4
+  [ 7] .cpu1_stacks      NOBITS          01c06000 000400 001f00 00  WA  0   0 32
+  [ 8] .shstrtab         STRTAB          00000000 089588 000051 00      0   0  1
+  [ 9] .symtab           SYMTAB          00000000 07a910 007410 10     10 1574  4
+  [10] .strtab           STRTAB          00000000 081d20 007868 00      0   0  1
+Key to Flags:
+  W (write), A (alloc), X (execute), M (merge), S (strings), I (info),
+  L (link order), O (extra OS processing required), G (group), T (TLS),
+  C (compressed), x (unknown), o (OS specific), E (exclude),
+  D (mbind), p (processor specific)
+
+== where the bytes go (tools/size_report.py)
+sections: .text 493224, .data 3856, .bss 91960, .pool 335856
+
+== .text: 484191 B in sized symbols; by group
+    266278  other
+    134841  plaits
+     32461  sequencer/ui
+     11646  drums
+     11508  acid
+      8040  elements
+      6813  prism
+      4698  phys
+      3654  juno
+      3168  stmlib/mi
+      1084  fx/reverb/delay
+  -- biggest 90 symbols in .text
+     50688  plaits::wav_integrated_waves
+     20124  ui_draw
+     14460  mix_block
+     14378  draw_graph
+     11648  DS_KITS
+     11228  ed_handle
+     10088  events_block
+      8744  fm1_main
+      8632  ui_input
+      8428  acid_render
+      8192  JN_VCF_G1
+      8182  layer_screen_draw
+      5824  OP_SPR_BUDDHA
+      5824  OP_SPR_BUDDHA_LEAN
+      5824  OP_SPR_GORILLA
+      5824  OP_SPR_GORILLA_UP
+      5824  OP_SPR_WIZARD
+      5376  FONT_S_DATA
+      4802  plaits::bank_4
+      4288  prism_render
+      4096  plaits::syx_bank_2
+      4096  plaits::syx_bank_0
+      4096  plaits::syx_bank_1
+      3308  edit_param
+      3268  hex_render
+      3256  usb_poll
+      2814  drums_mix
+      2564  plaits::lut_sine
+      2526  mix_part_run
+      2524  plaits::bank_3
+      2496  OP_SPR_SAUCER
+      2400  DG_NODE
+      2160  GP
+      2050  LX_REC4
+      2050  PR_SINE
+      1920  UAC_FIR
+      1862  bass303_set
+      1780  HEX_KITS
+      1694  juno_render
+      1684  pr_wave_render
+      1682  plaits::SixOpEngine::Render(plaits::EngineParameters const&, float*, float*, unsigned long
+      1626  trk_note_on
+      1600  PRESET_TRIM
+      1588  proj_import
+      1560  layer_key
+      1552  plaits::bank_2
+      1548  PRISM_PRESETS
+      1496  ota_session
+      1420  TP
+      1406  px_string_block
+      1400  plaits::fm::Voice<6>::Render(plaits::fm::Voice<6>::Parameters const&, float**, unsigned lo
+      1386  proj_apply
+      1372  plaits::AnalogSnareDrum::Render(bool, bool, float, float, float, float, float, float*, uns
+      1358  plaits::LPCSpeechSynthWordBank::LoadNextWord(unsigned char const*)
+      1356  px_modal_run
+      1342  plaits::SyntheticSnareDrum::Render(bool, bool, float, float, float, float, float, float*, 
+      1300  LX_TR_CLAP
+      1300  LX_TR_KICK
+      1300  LX_TR_SNR
+      1284  px_bow_run
+      1278  plaits::VirtualAnalogVCFEngine::Render(plaits::EngineParameters const&, float*, float*, un
+      1238  phys_render_e
+      1233  plaits::bank_0
+      1198  plaits::SyntheticBassDrum::Render(bool, bool, float, float, float, float, float, float, fl
+      1188  void plaits::VariableShapeOscillator::Render<true, true>(float, float, float, float, float
+      1186  plx_init
+      1178  ed_service
+      1168  plaits::NoiseEngine::Render(plaits::EngineParameters const&, float*, float*, unsigned long
+      1152  JUNO_PRESETS
+      1152  MM_LOGO_BIG
+      1152  void plaits::String::ProcessInternal<(plaits::StringNonLinearity)1>(float, float, float, f
+      1148  lx_osc
+      1140  fm1_timer5_irq
+      1104  plaits::FMEngine::Render(plaits::EngineParameters const&, float*, float*, unsigned long, b
+      1100  LX_TR_HAT
+      1100  LX_TR_TICK
+      1098  px_blow_run
+      1080  void plaits::VariableShapeOscillator::Render<true, false>(float, float, float, float, floa
+      1064  plaits::WaveTerrainEngine::Terrain(float, float, int)
+      1040  plaits::VirtualAnalogEngine::Render(plaits::EngineParameters const&, float*, float*, unsig
+      1032  PR_FOLD
+      1032  elements::lut_env_quartic
+      1032  elements::lut_env_expo
+      1032  elements::lut_env_linear
+      1032  elements::lut_env_increments
+      1028  stmlib::lut_pitch_ratio_low
+      1028  stmlib::lut_pitch_ratio_high
+      1028  plaits::lut_svf_shift
+      1026  LX_SAW4
+      1026  stmlib::atan_lut
+
+== .data: 4982 B in sized symbols; by group
+      2554  drums
+      2297  other
+        76  elements
+        29  sequencer/ui
+        16  acid
+         4  prism
+         4  stmlib/mi
+         2  clouds
+  -- biggest 90 symbols in .data
+      2548  drums
+       468  .L_MergedGlobals.1230
+       424  .L_MergedGlobals
+       272  .L_MergedGlobals.1231
+       272  lim_dac
+       272  lim_usb
+       196  tx
+       192  punch
+        76  elements::lookup_table_table
+        32  dust
+        20  cdc
+        16  acid_gen_sync.was
+        16  gen_ui_sync.dg_was
+        16  midi_knob_last
+         8  gk_ui
+         8  midi_chan_fix.was
+         6  midi_set
+         4  click_last
+         4  duck.0
+         4  duck.1
+         4  duck.2
+         4  events_block.chans_was
+         4  fill_last_bar
+         4  fm1_main.applied
+         4  gkf
+         4  live_bar
+         4  lx_rng_state
+         4  master_cur
+         4  mono_play.seed
+         4  op_hex_scene.made
+         4  op_k
+         4  op_prism_panel.key
+         4  op_scene_saucer.alt
+         4  op_scene_sumo.side
+         4  pen_note
+         4  pl_chance
+         4  pl_stride
+         4  pr_rng
+         4  rng_state
+         4  step_edit.len_cur
+         4  undo_sess
+         4  w_mask
+         4  stmlib::Random::rng_state_
+         3  live_slot
+         2  boot_t
+         2  cloud_ui_sync.was
+         2  gen_ui_sync.kb
+         2  gen_ui_sync.km
+         2  gen_ui_sync.kp
+         2  gen_ui_sync.kr
+         2  gen_ui_sync.on_was
+         2  hex_ui_sync.was_sel
+         2  op_ink
+         1  audio_last_half
+         1  fm1_core1_poll.was_online
+         1  gen_ui_sync.sel_was
+         1  gk.2
+         1  key_lit_trk
+         1  last_note
+         1  lights_min
+         1  live_req
+         1  live_sec
+         1  midi_knobs
+         1  op_note
+         1  op_scene_conga.next
+         1  pen_n
+         1  play_ui_sync.sel_was
+         1  song_keep_sec
+
+== .bss: 105970 B in sized symbols; by group
+    102792  other
+      1288  drums
+       987  clouds
+       809  sequencer/ui
+        80  prism
+         6  fx/reverb/delay
+         5  acid
+         3  phys
+  -- biggest 90 symbols in .bss
+     17368  rev_line
+      8448  trk
+      6160  up_bank
+      5280  ua_ring
+      4096  abuf
+      4060  ins
+      3840  proj_tmp
+      3840  st_buf
+      2584  proj_v3_tmp
+      2048  midi_sel_on
+      1792  usr_zone
+      1536  vis_lj
+      1464  dsu
+      1152  ft_ev
+      1024  ota_stage.hdr
+      1024  scope_buf
+      1024  scope_bufr
+      1024  vis_l
+      1024  vis_r
+       664  op_hex_scene.buf
+       652  undo
+       640  ota_dec
+       640  sx_frame
+       600  ed_out
+       596  cloud_cl
+       552  ep4tx
+       512  ed_smp_buf
+       512  ota_stage.b
+       512  ota_stage.mine
+       512  stem_buf
+       508  .L_MergedGlobals.1232
+       508  .L_MergedGlobals.1233
+       504  .L_MergedGlobals.1236
+       496  .L_MergedGlobals.1256
+       488  .L_MergedGlobals.1234
+       486  .L_MergedGlobals.1267
+       486  layer_screen_draw.tl
+       480  lcd_fillbuf
+       476  .L_MergedGlobals.1235
+       472  .L_MergedGlobals.1240
+       472  .L_MergedGlobals.1254
+       456  .L_MergedGlobals.1237
+       448  .L_MergedGlobals.1266
+       448  smp_user_scan.zs
+       436  .L_MergedGlobals.1265
+       436  ui
+       424  .L_MergedGlobals.1238
+       408  .L_MergedGlobals.1239
+       400  .L_MergedGlobals.1264
+       400  op_hex_scene.col
+       392  .L_MergedGlobals.1253
+       384  .L_MergedGlobals.1241
+       384  .L_MergedGlobals.1242
+       384  .L_MergedGlobals.1243
+       384  .L_MergedGlobals.1244
+       384  .L_MergedGlobals.1245
+       384  .L_MergedGlobals.1246
+       384  .L_MergedGlobals.1247
+       384  .L_MergedGlobals.1248
+       384  .L_MergedGlobals.1249
+       384  .L_MergedGlobals.1250
+       384  .L_MergedGlobals.1251
+       384  .L_MergedGlobals.1252
+       370  .L_MergedGlobals.1255
+       358  ed_w.10
+       358  ed_w.9
+       296  .L_MergedGlobals.1263
+       296  vs
+       256  .L_MergedGlobals.1257
+       256  .L_MergedGlobals.1258
+       256  .L_MergedGlobals.1259
+       256  .L_MergedGlobals.1260
+       256  .L_MergedGlobals.1261
+       256  .L_MergedGlobals.1262
+       256  cdc_in
+       256  con_flr.b
+       256  ed_w.11
+       256  midi_in_q
+       256  midi_out_q
+       256  sx_out_q
+       256  usb_out
+       240  song
+       192  ed_handle.r
+       178  cfg_plain
+       176  sl
+       160  tflt
+       142  pnew0
+       142  pnew1
+       136  fm1_in
+       136  rs
+
+== .pool: 335854 B in sized symbols; by group
+    332014  other
+      3840  sequencer/ui
+  -- biggest 90 symbols in .pool
+    131072  dly_buf
+     65536  punch_ring
+     59520  cv_px
+     32768  sl_buf
+     16640  eng_arena2
+      8592  eng_arena1
+      4096  cho_buf
+      3840  autosave_buf
+      3840  song_keep
+      3456  vis_sg
+      2452  eng_arena0
+      1994  rev_ap
+      1024  vis_im
+      1024  vis_re

@@ -1,4 +1,4 @@
-commit: 6b61b9de43d01862d18febbb9aa9e39acacccb73
+commit: f6a74b2f4bc4cf4c70d4b5a427cc2f33dd980092
 job status: success
 
 == build log (last 120 lines)
@@ -12,39 +12,39 @@ generated waves into /home/runner/work/karma-fm1/karma-fm1/build/genwav
 samples: 0 sets, 0 zones, 0 B ADPCM
 drum kits: 32 synthesised -> /home/runner/work/karma-fm1/karma-fm1/build/gen/felucca_drumkits.h
 logo: splash 240x188, 3463 B RLE -> /home/runner/work/karma-fm1/karma-fm1/build/gen/sloop_logo.h
-plx: 39 of 39 C++ files compiled
+plx: 37 of 37 C++ files compiled
   ok    .ram_text: 979 insns, no calls
-  ok    image 521752 B; RAM .data+.bss 95864 B of 98304; pool 335856 B of 344064
+  ok    image 500200 B; RAM .data+.bss 95832 B of 98304; pool 335856 B of 344064
   ok    register access: hal/ only (src/, loader/ clean)
 package  /home/runner/work/karma-fm1/karma-fm1/build/karma.fwsc  (the same: flash this one)
-app      /home/runner/work/karma-fm1/karma-fm1/build/felucca.bin  521752 B
+app      /home/runner/work/karma-fm1/karma-fm1/build/felucca.bin  500200 B
 loader   /home/runner/work/karma-fm1/karma-fm1/build/loader/ota.bin  6887 B
 package  /home/runner/work/karma-fm1/karma-fm1/build/felucca.fwsc  610043 B, identity FM-1_926
 
 == image files
--rw-r--r-- 1 runner runner   3856 Nov 12 19:37 build/data.bin
--rw-r--r-- 1 runner runner 521752 Nov 12 19:37 build/felucca.bin
--rw-r--r-- 1 runner runner 610043 Nov 12 19:37 build/felucca.fwsc
--rw-r--r-- 1 runner runner 610043 Nov 12 19:37 build/karma.fwsc
--rw-r--r-- 1 runner runner   3120 Nov 12 19:37 build/ramtext.bin
--rw-r--r-- 1 runner runner 514776 Nov 12 19:37 build/text.bin
+-rw-r--r-- 1 runner runner   3856 Nov 12 19:44 build/data.bin
+-rw-r--r-- 1 runner runner 500200 Nov 12 19:44 build/felucca.bin
+-rw-r--r-- 1 runner runner 610043 Nov 12 19:44 build/felucca.fwsc
+-rw-r--r-- 1 runner runner 610043 Nov 12 19:44 build/karma.fwsc
+-rw-r--r-- 1 runner runner   3120 Nov 12 19:44 build/ramtext.bin
+-rw-r--r-- 1 runner runner 493224 Nov 12 19:44 build/text.bin
 
 == ELF sections (felucca.elf)
-There are 11 section headers, starting at offset 0x8ef1c:
+There are 11 section headers, starting at offset 0x895dc:
 
 Section Headers:
   [Nr] Name              Type            Addr     Off    Size   ES Flg Lk Inf Al
   [ 0]                   NULL            00000000 000000 000000 00      0   0  0
-  [ 1] .text             PROGBITS        02000120 000320 07dad8 00  AX  0   0 16
-  [ 2] .ram_text         PROGBITS        01c00000 07e200 000c30 00  AX  0   0  2
-  [ 3] .data             PROGBITS        01c08000 07ef00 000f10 00  WA  0   0 16
-  [ 4] .bss              NOBITS          01c08f20 07fe20 016758 00  WA  0   0 32
+  [ 1] .text             PROGBITS        02000120 000320 0786a8 00  AX  0   0 16
+  [ 2] .ram_text         PROGBITS        01c00000 078d00 000c30 00  AX  0   0  2
+  [ 3] .data             PROGBITS        01c08000 079a00 000f10 00  WA  0   0 16
+  [ 4] .bss              NOBITS          01c08f20 07a920 016738 00  WA  0   0 32
   [ 5] .pool             NOBITS          01c20000 000500 051ff0 00  WA  0   0  4
   [ 6] .noinit           NOBITS          01c7c000 000200 003cd0 00  WA  0   0  4
   [ 7] .cpu1_stacks      NOBITS          01c06000 000400 001f00 00  WA  0   0 32
-  [ 8] .shstrtab         STRTAB          00000000 08eec9 000051 00      0   0  1
-  [ 9] .symtab           SYMTAB          00000000 07fe10 007570 10     10 1583  4
-  [10] .strtab           STRTAB          00000000 087380 007b49 00      0   0  1
+  [ 8] .shstrtab         STRTAB          00000000 089588 000051 00      0   0  1
+  [ 9] .symtab           SYMTAB          00000000 07a910 007410 10     10 1574  4
+  [10] .strtab           STRTAB          00000000 081d20 007868 00      0   0  1
 Key to Flags:
   W (write), A (alloc), X (execute), M (merge), S (strings), I (info),
   L (link order), O (extra OS processing required), G (group), T (TLS),
@@ -52,34 +52,33 @@ Key to Flags:
   D (mbind), p (processor specific)
 
 == where the bytes go (tools/size_report.py)
-sections: .text 514776, .data 3856, .bss 91992, .pool 335856
+sections: .text 493224, .data 3856, .bss 91960, .pool 335856
 
-== .text: 505711 B in sized symbols; by group
-    267616  other
+== .text: 484191 B in sized symbols; by group
+    266278  other
     134841  plaits
-     32451  sequencer/ui
-     28222  elements
+     32461  sequencer/ui
      11646  drums
      11508  acid
-      6811  prism
-      4710  phys
+      8040  elements
+      6813  prism
+      4698  phys
       3654  juno
       3168  stmlib/mi
       1084  fx/reverb/delay
   -- biggest 90 symbols in .text
      50688  plaits::wav_integrated_waves
-     20146  ui_draw
-     16388  elements::lut_sine
-     14468  mix_block
-     14394  draw_graph
+     20124  ui_draw
+     14460  mix_block
+     14378  draw_graph
      11648  DS_KITS
-     11240  ed_handle
-     10122  events_block
-      8720  fm1_main
-      8584  ui_input
+     11228  ed_handle
+     10088  events_block
+      8744  fm1_main
+      8632  ui_input
       8428  acid_render
-      8216  layer_screen_draw
       8192  JN_VCF_G1
+      8182  layer_screen_draw
       5824  OP_SPR_BUDDHA
       5824  OP_SPR_BUDDHA_LEAN
       5824  OP_SPR_GORILLA
@@ -87,11 +86,11 @@ sections: .text 514776, .data 3856, .bss 91992, .pool 335856
       5824  OP_SPR_WIZARD
       5376  FONT_S_DATA
       4802  plaits::bank_4
-      4286  prism_render
+      4288  prism_render
       4096  plaits::syx_bank_2
       4096  plaits::syx_bank_0
       4096  plaits::syx_bank_1
-      3302  edit_param
+      3308  edit_param
       3268  hex_render
       3256  usb_poll
       2814  drums_mix
@@ -120,7 +119,6 @@ sections: .text 514776, .data 3856, .bss 91992, .pool 335856
       1406  px_string_block
       1400  plaits::fm::Voice<6>::Render(plaits::fm::Voice<6>::Parameters const&, float**, unsigned lo
       1386  proj_apply
-      1378  elements::OminousVoice::Process(elements::Patch const&, float, float, bool, float const*, 
       1372  plaits::AnalogSnareDrum::Render(bool, bool, float, float, float, float, float, float*, uns
       1358  plaits::LPCSpeechSynthWordBank::LoadNextWord(unsigned char const*)
       1356  px_modal_run
@@ -157,6 +155,8 @@ sections: .text 514776, .data 3856, .bss 91992, .pool 335856
       1028  stmlib::lut_pitch_ratio_low
       1028  stmlib::lut_pitch_ratio_high
       1028  plaits::lut_svf_shift
+      1026  LX_SAW4
+      1026  stmlib::atan_lut
 
 == .data: 4982 B in sized symbols; by group
       2554  drums
@@ -169,9 +169,9 @@ sections: .text 514776, .data 3856, .bss 91992, .pool 335856
          2  clouds
   -- biggest 90 symbols in .data
       2548  drums
-       468  .L_MergedGlobals.1234
+       468  .L_MergedGlobals.1230
        424  .L_MergedGlobals
-       272  .L_MergedGlobals.1235
+       272  .L_MergedGlobals.1231
        272  lim_dac
        272  lim_usb
        196  tx
@@ -237,8 +237,8 @@ sections: .text 514776, .data 3856, .bss 91992, .pool 335856
          1  play_ui_sync.sel_was
          1  song_keep_sec
 
-== .bss: 106005 B in sized symbols; by group
-    102827  other
+== .bss: 105970 B in sized symbols; by group
+    102792  other
       1288  drums
        987  clouds
        809  sequencer/ui
@@ -277,27 +277,31 @@ sections: .text 514776, .data 3856, .bss 91992, .pool 335856
        512  ota_stage.b
        512  ota_stage.mine
        512  stem_buf
-       508  .L_MergedGlobals.1236
-       504  .L_MergedGlobals.1237
-       504  .L_MergedGlobals.1239
-       504  .L_MergedGlobals.1240
-       496  .L_MergedGlobals.1260
-       486  .L_MergedGlobals.1271
+       508  .L_MergedGlobals.1232
+       508  .L_MergedGlobals.1233
+       504  .L_MergedGlobals.1236
+       496  .L_MergedGlobals.1256
+       488  .L_MergedGlobals.1234
+       486  .L_MergedGlobals.1267
        486  layer_screen_draw.tl
-       484  .L_MergedGlobals.1238
        480  lcd_fillbuf
-       472  .L_MergedGlobals.1244
-       472  .L_MergedGlobals.1258
-       456  .L_MergedGlobals.1241
-       448  .L_MergedGlobals.1270
+       476  .L_MergedGlobals.1235
+       472  .L_MergedGlobals.1240
+       472  .L_MergedGlobals.1254
+       456  .L_MergedGlobals.1237
+       448  .L_MergedGlobals.1266
        448  smp_user_scan.zs
-       436  .L_MergedGlobals.1269
+       436  .L_MergedGlobals.1265
        436  ui
-       424  .L_MergedGlobals.1242
-       408  .L_MergedGlobals.1243
-       400  .L_MergedGlobals.1268
+       424  .L_MergedGlobals.1238
+       408  .L_MergedGlobals.1239
+       400  .L_MergedGlobals.1264
        400  op_hex_scene.col
-       392  .L_MergedGlobals.1257
+       392  .L_MergedGlobals.1253
+       384  .L_MergedGlobals.1241
+       384  .L_MergedGlobals.1242
+       384  .L_MergedGlobals.1243
+       384  .L_MergedGlobals.1244
        384  .L_MergedGlobals.1245
        384  .L_MergedGlobals.1246
        384  .L_MergedGlobals.1247
@@ -306,21 +310,17 @@ sections: .text 514776, .data 3856, .bss 91992, .pool 335856
        384  .L_MergedGlobals.1250
        384  .L_MergedGlobals.1251
        384  .L_MergedGlobals.1252
-       384  .L_MergedGlobals.1253
-       384  .L_MergedGlobals.1254
-       384  .L_MergedGlobals.1255
-       384  .L_MergedGlobals.1256
-       370  .L_MergedGlobals.1259
+       370  .L_MergedGlobals.1255
        358  ed_w.10
        358  ed_w.9
-       296  .L_MergedGlobals.1267
+       296  .L_MergedGlobals.1263
        296  vs
+       256  .L_MergedGlobals.1257
+       256  .L_MergedGlobals.1258
+       256  .L_MergedGlobals.1259
+       256  .L_MergedGlobals.1260
        256  .L_MergedGlobals.1261
        256  .L_MergedGlobals.1262
-       256  .L_MergedGlobals.1263
-       256  .L_MergedGlobals.1264
-       256  .L_MergedGlobals.1265
-       256  .L_MergedGlobals.1266
        256  cdc_in
        256  con_flr.b
        256  ed_w.11
