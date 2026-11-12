@@ -234,6 +234,10 @@ static volatile uint8_t dsu_aud_k, dsu_aud_lane, dsu_aud_vel;
 static void drum_audition_poll(void)
 {
     uint32_t vel = dsu_aud_vel;
+#if MAIN_MENU_NO_DRUMS
+    (void)vel;
+    return;
+#endif
     if (!vel)
         return;
     dsu_aud_vel = 0;
@@ -250,6 +254,10 @@ static void drum_on(uint32_t note, uint32_t vel)
     voice_t *v = &drums.v[0];
     uint32_t i, zi = 0xFFFFu, kit = drum_kit();
     int32_t zid = -1;
+#if MAIN_MENU_NO_DRUMS
+    (void)note; (void)vel; (void)si; (void)set; (void)v; (void)i; (void)zi; (void)kit; (void)zid;
+    return;            /* the drum track never sounds: nothing below is reachable, the linker drops its kits */
+#endif
     if (note != 76u && note != 77u)                 /* the pads and key LEDs (not the click's wood block) */
         drums.hits |= (uint16_t)(1u << lane_of_note(note));
     if (note == 35u || note == 36u)
@@ -381,6 +389,11 @@ static inline void drums_mix(int32_t *ml, int32_t *mr, int32_t *rev, int32_t *dl
         }
         drums.tail -= drums.tail / 16 + (drums.tail > 0 ? 1 : drums.tail < 0 ? -1 : 0);
     }
+#if MAIN_MENU_NO_DRUMS
+    (void)lvl; (void)send; (void)dsend; (void)csend; (void)kboost; (void)gl; (void)gr;
+    drums.peak = pk;
+    return;
+#endif
     for (k = 0; k < NDRUM; k++) {               /* synthesised voices: render, then as below */
         voice_t *v = &drums.v[k];
         uint32_t m = n < CTL ? n : CTL;             /* (the mix runs in blocks of CTL) */

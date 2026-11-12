@@ -883,7 +883,9 @@ static void draw_graph(void)
             break;
         case GR_HEX:
             cv_oy = 0;
+#if !MAIN_MENU_NO_DRUMS
             op_hex_scene();                          /* the drum sound, its picture (ui_op.c) */
+#endif
             break;
         case GR_FX:
             cv_oy = 0;
