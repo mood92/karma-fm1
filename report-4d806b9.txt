@@ -1,0 +1,27 @@
+commit: 4d806b9832b5c052fd8162b8b7e9a8beb631e103
+job status: cancelled
+
+== build log (last 120 lines)
+(no build.log)
+
+== image files
+ls: cannot access 'build/*.bin': No such file or directory
+ls: cannot access 'build/*.fwsc': No such file or directory
+
+== ELF sections (felucca.elf)
+readelf: Error: 'build/felucca.elf': No such file
+
+== where the bytes go (tools/size_report.py)
+sections: 
+
+== .text: 0 B in sized symbols; by group
+  -- biggest 90 symbols in .text
+
+== .data: 0 B in sized symbols; by group
+  -- biggest 90 symbols in .data
+
+== .bss: 0 B in sized symbols; by group
+  -- biggest 90 symbols in .bss
+
+== .pool: 0 B in sized symbols; by group
+  -- biggest 90 symbols in .pool
